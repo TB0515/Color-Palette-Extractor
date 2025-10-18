@@ -1,0 +1,204 @@
+:root {
+    --background: #121212;
+    --hover: #2a6df4;
+    --button: #1a73e8;
+    --darkOne: #222;
+    --darkTwo: #555;
+    --lightOne: #e0e0e0;
+    --lightTwo: #bbbbbb;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background-color: var(--background);
+    color: var(--lightOne);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px 30px;
+    line-height: 1.5;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+h1, h2, h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: 700;
+    color: var(--lightOne);
+}
+
+h1 {
+    font-size: 2.8rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.4rem;
+}
+
+.choice-card-content {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.releaseDate-option p {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--lightTwo);
+}
+
+input[type=number] {
+    width: 100px;
+    padding: 8px 10px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1.5px solid var(--lightTwo);
+    background-color: transparent;
+    color: var(--lightOne);
+    transition: border-color 0.3s;
+}
+
+input[type=number]:focus {
+    border-color: var(--button);
+    outline: none;
+}
+
+.genreFilter {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+#genre {
+    padding: 10px 14px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1.5px solid var(--lightTwo);
+    background-color: transparent;
+    color: var(--lightOne);
+    transition: border-color 0.3s;
+}
+
+#genre:focus {
+    border-color: var(--button);
+    outline: none;
+}
+
+button {
+    background-color: var(--button);
+    color: var(--lightOne);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: background-color 0.3s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+button:hover {
+    background-color: var(--hover);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+#moviePoster {
+    width: 400px;
+    height: 400px;
+    object-fit: cover;
+    margin: 20px 0 40px 0;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+    transition: box-shadow 0.3s ease;
+}
+
+#moviePoster:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+}
+
+
+#moviesContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 25px;
+}
+
+
+.movieCard {
+    background-color: var(--darkTwo);
+    border-radius: 10px;
+    padding: 8px;
+    width: 160px;
+    height: 350px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--lightTwo);
+    border: 2px solid transparent;
+}
+
+.movieCard:hover {
+    box-shadow: 0 6px 15px var(--hover);
+    border-color: var(--button);
+    transform: translateY(-4px);
+}
+
+.movieCard img {
+    width: 130px;
+    height: 200px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    background-color: var(--darkOne); 
+}
+
+.movie-info {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.5rem;
+    text-wrap: wrap;
+    color: var(--lightOne);
+}
+
+
+p, section, div {
+    color: var(--lightOne);
+    margin-bottom: 1em;
+    max-width: 80vw;
+}
+
+
+@media (max-width: 600px) {
+    body {
+        padding: 15px 20px;
+    }
+    #moviePoster {
+        width: 100%;
+        height: auto;
+    }
+    .choice-card-content {
+        flex-direction: column;
+        gap: 15px;
+    }
+    #moviesContainer {
+        justify-content: center;
+    }
+}

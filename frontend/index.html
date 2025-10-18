@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="Stylesheet" href="styles.css">
+    <title>Dynamic Website Color Change</title>
+</head>
+<body>
+    <h1>Welcome to color palette extractor</h1>
+    <p>Apply the filters below to browse movies. Click on a movie to show its poster, then press the 'Generate Color Palette' button to view the extracted color scheme from the poster.</p>
+    <p>Release Date</p>
+    <div class="choice-card-content">
+        <div class="releaseDate-option">
+        <p>from</p>
+        <input
+            name="startYear"
+            id="startYear"
+            type="number"
+            min="1900"
+            max="2025"
+            step="1"
+            value="2025"
+        />
+        </div>
+        <div class="releaseDate-option">
+        <p>to</p>
+        <input
+            name="endYear"
+            id="endYear"
+            type="number"
+            min="1900"
+            max="2025"
+            step="1"
+            value="2025"
+        />
+        </div>
+    </div>
+    
+    <p>Genre</p>
+    <div class="genreFilter">
+        <select name="genre" id="genre">
+            <option value="28" id="action">Action</option>
+            <option value="12" id="adventure">Adventure</option>
+            <option value="16" id="animation">Animation</option>
+            <option value="35" id="comedy">Comedy</option>
+            <option value="80" id="crime">Crime</option>
+            <option value="99" id="documentary">Documentary</option>
+            <option value="18" id="drama">Drama</option>
+            <option value="10751" id="family">Family</option>
+            <option value="14" id="fantasy">Fantasy</option>
+            <option value="36" id="history">History</option>
+            <option value="27" id="horror">Horror</option>
+            <option value="10402" id="music">Music</option>
+            <option value="9648" id="mystery">Mystery</option>
+            <option value="10749" id="romance">Romance</option>
+            <option value="878" id="science_fiction">Science Fiction</option>
+            <option value="10770" id="tv_movie">TV Movie</option>
+            <option value="53" id="thriller">Thriller</option>
+            <option value="10752" id="war">War</option>
+            <option value="37" id="western">Western</option>
+        </select>
+        <button id="filterSubmit" type="submit">Submit</button>
+    </div>
+    <h2>Page color changes based on the movie poster</h2>
+    <div>
+        <img id="moviePoster" />
+    </div>
+    <button id="extractColor">Generate Color palette</button>
+    <div>
+        <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
+    </div>
+
+    <div id="moviesContainer"></div>
+    <script src="main.js"></script>
+</body>
+</html>
