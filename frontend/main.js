@@ -109,7 +109,8 @@ window.addEventListener('load', function() {
     //convert url to file object and then file to base64 string
     
     async function getBase64FromImageUrl(imageUrl) {
-        const proxyUrl = `http://localhost:8000/proxy-image?url=${encodeURIComponent(imageUrl)}`
+        const proxyBaseURL = process.env.PROXY_BASE_URL || 'http://localhost:8000';
+        const proxyUrl = `${proxyBaseURL}/proxy-image?url=${encodeURIComponent(imageUrl)}`
         const response = await fetch(proxyUrl);
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
