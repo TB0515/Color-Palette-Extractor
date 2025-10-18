@@ -69,11 +69,11 @@ app.get('/api/searchmovies', async (req, res) => {
 });
 
 // Image proxy route
-app.get('/config.js', (req, res) => {
-  const proxyBaseURL = process.env.PROXY_BASE_URL || 'http://localhost:8000';
-  res.type('application/javascript');
-  res.send(`window.PROXY_BASE_URL = "${proxyBaseURL}";`);
-});
+// app.get('/config.js', (req, res) => {
+//   const proxyBaseURL = process.env.PROXY_BASE_URL || 'http://localhost:8000';
+//   res.type('application/javascript');
+//   res.send(`window.PROXY_BASE_URL = "${proxyBaseURL}";`);
+// });
 
 app.get('/proxy-image', async (req, res) => {
   const imageUrl = req.query.url;
