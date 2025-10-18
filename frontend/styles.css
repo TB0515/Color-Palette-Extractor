@@ -12,13 +12,14 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
     width: 100%;
     background-color: var(--background);
     color: var(--lightOne);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 20px 30px;
+    padding-top: 20px;
+    padding-bottom: 20px;
     line-height: 1.5;
     transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -42,6 +43,28 @@ h3 {
     font-size: 1.4rem;
 }
 
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+    text-align: center;
+    font-weight: 600;
+    margin: auto auto;
+    color: var(--lightTwo);
+}
+
 .choice-card-content {
     display: flex;
     gap: 25px;
@@ -49,6 +72,7 @@ h3 {
 }
 
 .releaseDate-option p {
+    text-align: center;
     margin-bottom: 6px;
     font-weight: 600;
     color: var(--lightTwo);
@@ -73,8 +97,9 @@ input[type=number]:focus {
 .genreFilter {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 15px;
-    margin-bottom: 30px;
+    margin: auto auto;
 }
 
 #genre {
@@ -90,6 +115,24 @@ input[type=number]:focus {
 #genre:focus {
     border-color: var(--button);
     outline: none;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    margin:auto auto;
+    gap: 10px;
+}
+
+.search-bar input[type="text"] {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1.5px solid var(--lightTwo);
+    background-color: transparent;
+    color: var(--lightOne);
+    transition: border-color 0.3s;
+    width: 250px;
 }
 
 button {

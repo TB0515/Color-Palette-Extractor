@@ -27,14 +27,14 @@ app.get('/api/movies', async (req, res) => {
   const startDate = new Date(startYear, 0, 1).toISOString().slice(0, 10);
   const endDate = new Date(endYear, 11, 31).toISOString().slice(0, 10);
 
-  const TMDB_API_KEY = process.env.TMDB_API_KEY;
+  const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
   const pageNumber = Math.max(parseInt(page) || 1, 1);
 
   const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}&with_genres=${genreID}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
   const options = {
     headers: {
       accept: 'application/json',
-      Authorization: `Bearer ${TMDB_API_KEY}`
+      Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`
     }
   }
   try {
@@ -46,6 +46,27 @@ app.get('/api/movies', async (req, res) => {
   }
 });
 
+// TMDB search movies proxy route
+app.get('/api/searchmovies', async (req, res) => {
+  const { query } = req.query;
+
+  const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
+
+  const url = `https://api.themoviedb.org/3/search/movie?query=${query}&include_adult=false&language=en-US&page=1`;
+  const options = {
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`
+    }
+  }
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    res.json(data.results);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search movies' });
+  }
+});
 
 // Image proxy route
 app.get('/proxy-image', async (req, res) => {
@@ -67,6 +88,7 @@ app.post('/api/extract-colors', async (req, res) => {
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json'

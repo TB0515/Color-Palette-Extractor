@@ -2,24 +2,22 @@ window.addEventListener('load', function() {
     const startYearSelection = document.getElementById("startYear");
     const endYearSelection = document.getElementById("endYear");
     const filterOption = document.getElementById("genre");
-    const submitBtn = document.getElementById("filterSubmit");
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
     const movieContainer = document.getElementById("moviesContainer");
-    const pageDisplay = document.getElementById("currentPage");
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
     const img = document.getElementById("moviePoster");
     const btn = document.getElementById("extractColor");
 
     let currentPage = 1;
-    const moviesPerPage = 20;
-
 
     // Get Movie list
     async function fetchMovies(genreID, startYear, endYear, page) {
         const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
         const response = await fetch(url);
         const movies = await response.json();
-        console.log(movies);
+        
         populateMovies(movies)
     }
 
@@ -53,24 +51,39 @@ window.addEventListener('load', function() {
         });
     }
 
-
-    submitBtn.addEventListener("click", async () => {
+    filterOption.addEventListener("change", async () => {
         const currentGenreID = filterOption.value;
         const startYear = startYearSelection.value;
         const endYear = endYearSelection.value;
         currentPage = 1;
         movieContainer.innerHTML = "";
         await fetchMovies(currentGenreID, startYear, endYear, currentPage);
-        updatePageDisplay();
     });
 
 
+    // Search functionality
+    async function fetchSearchResults(query) {
+        const url = `/api/searchmovies?query=${query}`;
+        const response = await fetch(url);
+        const movies = await response.json();
+        populateMovies(movies);
+    }
+
+    searchButton.addEventListener("click", async () => {
+        const query = searchInput.value.toLowerCase();
+        movieContainer.innerHTML = "";
+        await fetchSearchResults(query);
+    });
+
+    searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault(); 
+            searchButton.click();    
+        }
+    });
+
     // Pagination with TMDB API
 
-
-    function updatePageDisplay() {
-        pageDisplay.textContent = currentPage;
-    }
 
     prevPageBtn.addEventListener("click", () => {
         if (currentPage > 1) {
@@ -80,7 +93,6 @@ window.addEventListener('load', function() {
             const startYear = startYearSelection.value;
             const endYear = endYearSelection.value;
             fetchMovies(currentGenreID, startYear, endYear, currentPage);
-            updatePageDisplay();
         }
     });
 
@@ -91,10 +103,7 @@ window.addEventListener('load', function() {
         const startYear = startYearSelection.value;
         const endYear = endYearSelection.value;
         fetchMovies(currentGenreID, startYear, endYear, currentPage);
-        updatePageDisplay();
     });
-
-    updatePageDisplay();
 
 
     //convert url to file object and then file to base64 string
