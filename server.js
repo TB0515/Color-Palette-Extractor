@@ -23,16 +23,22 @@ app.use(express.static(path.join(__dirname, './frontend')));
 
 // TMDB movies proxy route
 app.get('/api/movies', async (req, res) => {
-  const { genreID, startYear, endYear } = req.query;
+  const { genreID, startYear, endYear, page } = req.query;
   const startDate = new Date(startYear, 0, 1).toISOString().slice(0, 10);
   const endDate = new Date(endYear, 11, 31).toISOString().slice(0, 10);
 
   const TMDB_API_KEY = process.env.TMDB_API_KEY;
+  const pageNumber = Math.max(parseInt(page) || 1, 1);
 
-  const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=1&with_genres=${genreID}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}&api_key=${TMDB_API_KEY}`;
-
+  const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}&with_genres=${genreID}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
+  const options = {
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${TMDB_API_KEY}`
+    }
+  }
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, options);
     const data = await response.json();
     res.json(data.results);
   } catch (err) {
@@ -61,7 +67,6 @@ app.post('/api/extract-colors', async (req, res) => {
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json'

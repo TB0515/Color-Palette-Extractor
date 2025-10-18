@@ -4,16 +4,23 @@ window.addEventListener('load', function() {
     const filterOption = document.getElementById("genre");
     const submitBtn = document.getElementById("filterSubmit");
     const movieContainer = document.getElementById("moviesContainer");
+    const pageDisplay = document.getElementById("currentPage");
+    const prevPageBtn = document.getElementById("prevPage");
+    const nextPageBtn = document.getElementById("nextPage");
     const img = document.getElementById("moviePoster");
     const btn = document.getElementById("extractColor");
 
+    let currentPage = 1;
+    const moviesPerPage = 20;
+
+
     // Get Movie list
-    async function fetchMovies(genreID, startYear, endYear) {
-        const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}`;
+    async function fetchMovies(genreID, startYear, endYear, page) {
+        const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
         const response = await fetch(url);
         const movies = await response.json();
         console.log(movies);
-        populateMovies(movies);
+        populateMovies(movies)
     }
 
     function populateMovies(movies) {
@@ -51,9 +58,43 @@ window.addEventListener('load', function() {
         const currentGenreID = filterOption.value;
         const startYear = startYearSelection.value;
         const endYear = endYearSelection.value;
+        currentPage = 1;
         movieContainer.innerHTML = "";
-        fetchMovies(currentGenreID, startYear, endYear);
+        await fetchMovies(currentGenreID, startYear, endYear, currentPage);
+        updatePageDisplay();
     });
+
+
+    // Pagination with TMDB API
+
+
+    function updatePageDisplay() {
+        pageDisplay.textContent = currentPage;
+    }
+
+    prevPageBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            movieContainer.innerHTML = "";
+            const currentGenreID = filterOption.value;
+            const startYear = startYearSelection.value;
+            const endYear = endYearSelection.value;
+            fetchMovies(currentGenreID, startYear, endYear, currentPage);
+            updatePageDisplay();
+        }
+    });
+
+    nextPageBtn.addEventListener("click", () => {
+        currentPage++;
+        movieContainer.innerHTML = "";
+        const currentGenreID = filterOption.value;
+        const startYear = startYearSelection.value;
+        const endYear = endYearSelection.value;
+        fetchMovies(currentGenreID, startYear, endYear, currentPage);
+        updatePageDisplay();
+    });
+
+    updatePageDisplay();
 
 
     //convert url to file object and then file to base64 string
