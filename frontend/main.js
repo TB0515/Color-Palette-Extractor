@@ -5,6 +5,7 @@ window.addEventListener('load', function() {
     const searchInput = document.getElementById("searchInput");
     const searchButton = document.getElementById("searchButton");
     const movieContainer = document.getElementById("moviesContainer");
+    const pageControls = document.getElementById("paginationControls");
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
     const img = document.getElementById("moviePoster");
@@ -18,7 +19,11 @@ window.addEventListener('load', function() {
         const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
         const response = await fetch(url);
         const movies = await response.json();
-        
+        if (movies.length === 0) {
+            pageControls.style.display = "none";
+        } else {
+            pageControls.style.display = "block";
+        }
         populateMovies(movies)
     }
 
@@ -48,16 +53,19 @@ window.addEventListener('load', function() {
             
             card.appendChild(movieImg);
             card.appendChild(info);
+            if (movieContainer.children.length >= 20) {
+                movieContainer.replaceChildren(card);
+            }
             movieContainer.appendChild(card);
         });
     }
+
 
     filterOption.addEventListener("change", async () => {
         const currentGenreID = filterOption.value;
         const startYear = startYearSelection.value;
         const endYear = endYearSelection.value;
         currentPage = 1;
-        movieContainer.innerHTML = "";
         await fetchMovies(currentGenreID, startYear, endYear, currentPage);
     });
 
@@ -72,7 +80,7 @@ window.addEventListener('load', function() {
 
     searchButton.addEventListener("click", async () => {
         const query = searchInput.value.toLowerCase();
-        movieContainer.innerHTML = "";
+        if (!query) return;
         await fetchSearchResults(query);
     });
 
@@ -86,24 +94,22 @@ window.addEventListener('load', function() {
     // Pagination with TMDB API
 
 
-    prevPageBtn.addEventListener("click", () => {
+    prevPageBtn.addEventListener("click", async() => {
         if (currentPage > 1) {
             currentPage--;
-            movieContainer.innerHTML = "";
             const currentGenreID = filterOption.value;
             const startYear = startYearSelection.value;
             const endYear = endYearSelection.value;
-            fetchMovies(currentGenreID, startYear, endYear, currentPage);
+            await fetchMovies(currentGenreID, startYear, endYear, currentPage);
         }
     });
 
-    nextPageBtn.addEventListener("click", () => {
+    nextPageBtn.addEventListener("click", async() => {
         currentPage++;
-        movieContainer.innerHTML = "";
         const currentGenreID = filterOption.value;
         const startYear = startYearSelection.value;
         const endYear = endYearSelection.value;
-        fetchMovies(currentGenreID, startYear, endYear, currentPage);
+        await fetchMovies(currentGenreID, startYear, endYear, currentPage);
     });
 
 
@@ -126,10 +132,15 @@ window.addEventListener('load', function() {
     
     // Change the CSS root 
     
-    function applyPaletteToTheme(palette) {
+    function applyPaletteToTheme(palette, theme) {
         const root = document.documentElement; 
         for (const key in palette) {
             root.style.setProperty(`--${key}`, palette[key]);
+        }
+        if (theme === "light") {
+            document.body.classList.add('light-theme');
+        } else {
+            document.body.classList.remove('light-theme');
         }
     }
     
@@ -156,7 +167,7 @@ window.addEventListener('load', function() {
     
     // Getting the color palatte
     
-    async function extractDarkColors() {
+    async function extractDarkColors(theme) {
         try {
             const base64Image = await getBase64FromImageUrl(img.src);
             if (!base64Image) {
@@ -197,7 +208,7 @@ window.addEventListener('load', function() {
             console.log(data);
             const palette = JSON.parse(data.choices[0].message.content);
             document.getElementById("colorValues").textContent = JSON.stringify(palette, null, 2);
-            applyPaletteToTheme(palette);
+            applyPaletteToTheme(palette, theme);
             console.log("Extracted palette:", palette);
         } catch (err) {
             console.error("Error extracting colors:", err);
@@ -205,14 +216,11 @@ window.addEventListener('load', function() {
     }
     
     btn.addEventListener("click", () => {
-        if (document.body.classList.contains('light-theme')) {
-            document.body.classList.remove('light-theme');
-        }
         document.getElementById("colorValues").textContent = "Extracting colors...";
-        extractDarkColors();
+        extractDarkColors("dark");
     });
 
-    async function extractLightColors() {
+    async function extractLightColors(theme) {
         try {
             const base64Image = await getBase64FromImageUrl(img.src);
             if (!base64Image) {
@@ -253,7 +261,7 @@ window.addEventListener('load', function() {
             console.log(data);
             const palette = JSON.parse(data.choices[0].message.content);
             document.getElementById("colorValues").textContent = JSON.stringify(palette, null, 2);
-            applyPaletteToTheme(palette);
+            applyPaletteToTheme(palette, theme);
             console.log("Extracted palette:", palette);
         } catch (err) {
             console.error("Error extracting colors:", err);
@@ -261,10 +269,7 @@ window.addEventListener('load', function() {
     }
     
     lightBtn.addEventListener("click", () => {
-        if (!document.body.classList.contains('light-theme')) {
-            document.body.classList.add('light-theme');
-        } 
         document.getElementById("colorValues").textContent = "Extracting colors...";
-        extractLightColors();
+        extractLightColors("light");
     });
 })
