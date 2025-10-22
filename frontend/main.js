@@ -8,7 +8,8 @@ window.addEventListener('load', function() {
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
     const img = document.getElementById("moviePoster");
-    const btn = document.getElementById("extractColor");
+    const btn = document.getElementById("extractDarkColor");
+    const lightBtn = document.getElementById("extractLightColor");
 
     let currentPage = 1;
 
@@ -130,7 +131,6 @@ window.addEventListener('load', function() {
         for (const key in palette) {
             root.style.setProperty(`--${key}`, palette[key]);
         }
-        document.body.classList.add('movieTheme');
     }
     
     // Structured Response Output
@@ -156,7 +156,7 @@ window.addEventListener('load', function() {
     
     // Getting the color palatte
     
-    async function extractColors() {
+    async function extractDarkColors() {
         try {
             const base64Image = await getBase64FromImageUrl(img.src);
             if (!base64Image) {
@@ -205,7 +205,66 @@ window.addEventListener('load', function() {
     }
     
     btn.addEventListener("click", () => {
+        if (document.body.classList.contains('light-theme')) {
+            document.body.classList.remove('light-theme');
+        }
         document.getElementById("colorValues").textContent = "Extracting colors...";
-        extractColors();
+        extractDarkColors();
+    });
+
+    async function extractLightColors() {
+        try {
+            const base64Image = await getBase64FromImageUrl(img.src);
+            if (!base64Image) {
+                throw new Error('Base64 image data is empty');
+            }
+            const response = await fetch("/api/extract-colors", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    response_format: {
+                        type: "json_schema",
+                        json_schema: outputStructure
+                    },
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition."
+                        },
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "Extract color palette from this image as JSON following the defined roles." },
+                                { type: "image_url", image_url: { url: `data:image/png;base64,${base64Image}` } }
+                            ]
+                        }
+                    ]
+                })
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                console.error("API error:", err);
+                throw new Error(`OpenAI API error: ${response.status} ${err.error?.message || ''}`);
+            }
+            const data = await response.json();
+            console.log(data);
+            const palette = JSON.parse(data.choices[0].message.content);
+            document.getElementById("colorValues").textContent = JSON.stringify(palette, null, 2);
+            applyPaletteToTheme(palette);
+            console.log("Extracted palette:", palette);
+        } catch (err) {
+            console.error("Error extracting colors:", err);
+        }
+    }
+    
+    lightBtn.addEventListener("click", () => {
+        if (!document.body.classList.contains('light-theme')) {
+            document.body.classList.add('light-theme');
+        } 
+        document.getElementById("colorValues").textContent = "Extracting colors...";
+        extractLightColors();
     });
 })
