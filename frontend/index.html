@@ -7,8 +7,9 @@
     <title>Color Palette Extractor</title>
 </head>
 <body>
-    <h1>Welcome to color palette extractor</h1>
-    <p>Apply the filters below to browse movies. Click on a movie to show its poster, then press the 'Generate Color Palette' button to view the extracted color scheme from the poster.</p>
+    <h1>Palette Extractor</h1>
+    <p>Extract Dark and Light color palettes from movie posters.</p>
+
     <div class="filters">
         <div class="filter-header">
             <p>Release Date</p>
@@ -77,20 +78,25 @@
             </div>
         </div>
     </div>
-    <h2>Page color changes based on the movie poster</h2>
-    <div>
-        <img id="moviePoster" />
-    </div>
-    <button id="extractDarkColor">Generate Dark-Themed Palette</button>
-    <button id="extractLightColor">Generate Light-Themed Palette</button>
-    <div>
-        <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
-    </div>
 
     <div id="moviesContainer"></div>
     <div id="paginationControls">
         <button id="prevPage">Previous</button>
         <button id="nextPage">Next</button>
+    </div>
+
+    <div id="posterSection">
+        <div>
+            <img id="moviePoster" />
+        </div>
+
+        <div id="colorButtons">
+            <button id="extractDarkColor">Generate Dark-Themed Palette</button>
+            <button id="extractLightColor">Generate Light-Themed Palette</button>
+            <div>
+                <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
+            </div>
+        </div>
     </div>
     <!-- <script src="config.js"></script> -->
     <script src="main.js"></script>
