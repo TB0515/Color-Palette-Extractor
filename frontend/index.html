@@ -1,103 +1,107 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="Stylesheet" href="styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="Stylesheet" href="styles.css" />
     <title>Color Palette Extractor</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Palette Extractor</h1>
     <p>Extract Dark and Light color palettes from movie posters.</p>
 
     <div class="filters">
-        <div class="filter-header">
-            <p>Release Date</p>
-            <div class="choice-card-content">
-                <div class="releaseDate-option">
-                <p>from</p>
-                <input
-                    name="startYear"
-                    id="startYear"
-                    type="number"
-                    min="1900"
-                    max="2025"
-                    step="1"
-                    value="2025"
-                />
-                </div>
-                <div class="releaseDate-option">
-                <p>to</p>
-                <input
-                    name="endYear"
-                    id="endYear"
-                    type="number"
-                    min="1900"
-                    max="2025"
-                    step="1"
-                    value="2025"
-                />
-                </div>
-            </div>
+      <div class="filter-header">
+        <p>Release Date</p>
+        <div class="choice-card-content">
+          <div class="releaseDate-option">
+            <p>from</p>
+            <input
+              name="startYear"
+              id="startYear"
+              type="number"
+              min="1900"
+              max="2025"
+              step="1"
+              value="2025"
+            />
+          </div>
+          <div class="releaseDate-option">
+            <p>to</p>
+            <input
+              name="endYear"
+              id="endYear"
+              type="number"
+              min="1900"
+              max="2025"
+              step="1"
+              value="2025"
+            />
+          </div>
         </div>
+      </div>
 
-        <div class="filter-header">
-            <p>Genre</p>
-            <div class="genreFilter">
-                <select name="genre" id="genre">
-                    <option value="" disabled selected>Select Genre</option>
-                    <option value="" id="all_genres">All Genres</option>
-                    <option value="28" id="action">Action</option>
-                    <option value="12" id="adventure">Adventure</option>
-                    <option value="16" id="animation">Animation</option>
-                    <option value="35" id="comedy">Comedy</option>
-                    <option value="80" id="crime">Crime</option>
-                    <option value="99" id="documentary">Documentary</option>
-                    <option value="18" id="drama">Drama</option>
-                    <option value="10751" id="family">Family</option>
-                    <option value="14" id="fantasy">Fantasy</option>
-                    <option value="36" id="history">History</option>
-                    <option value="27" id="horror">Horror</option>
-                    <option value="10402" id="music">Music</option>
-                    <option value="9648" id="mystery">Mystery</option>
-                    <option value="10749" id="romance">Romance</option>
-                    <option value="878" id="science_fiction">Science Fiction</option>
-                    <option value="10770" id="tv_movie">TV Movie</option>
-                    <option value="53" id="thriller">Thriller</option>
-                    <option value="10752" id="war">War</option>
-                    <option value="37" id="western">Western</option>
-                </select>
-            </div>
+      <div class="filter-header">
+        <p>Genre</p>
+        <div class="genreFilter">
+          <select name="genre" id="genre">
+            <option value="" disabled selected>Select Genre</option>
+            <option value="" id="all_genres">All Genres</option>
+            <option value="28" id="action">Action</option>
+            <option value="12" id="adventure">Adventure</option>
+            <option value="16" id="animation">Animation</option>
+            <option value="35" id="comedy">Comedy</option>
+            <option value="80" id="crime">Crime</option>
+            <option value="99" id="documentary">Documentary</option>
+            <option value="18" id="drama">Drama</option>
+            <option value="10751" id="family">Family</option>
+            <option value="14" id="fantasy">Fantasy</option>
+            <option value="36" id="history">History</option>
+            <option value="27" id="horror">Horror</option>
+            <option value="10402" id="music">Music</option>
+            <option value="9648" id="mystery">Mystery</option>
+            <option value="10749" id="romance">Romance</option>
+            <option value="878" id="science_fiction">Science Fiction</option>
+            <option value="10770" id="tv_movie">TV Movie</option>
+            <option value="53" id="thriller">Thriller</option>
+            <option value="10752" id="war">War</option>
+            <option value="37" id="western">Western</option>
+          </select>
         </div>
+      </div>
 
-        <div class="filter-header">
-            <p>Search Movie</p>
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search for a movie..." />
-                <button id="searchButton">Search</button>
-            </div>
+      <div class="filter-header">
+        <p>Search Movie</p>
+        <div class="search-bar">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search for a movie..."
+          />
+          <button id="searchButton">Search</button>
         </div>
+      </div>
     </div>
 
     <div id="moviesContainer"></div>
     <div id="paginationControls">
-        <button id="prevPage">Previous</button>
-        <button id="nextPage">Next</button>
+      <button id="prevPage">Previous</button>
+      <button id="nextPage">Next</button>
     </div>
 
     <div id="posterSection">
-        <div>
-            <img id="moviePoster" />
-        </div>
+      <div>
+        <img id="moviePoster" />
+      </div>
 
-        <div id="colorButtons">
-            <button id="extractDarkColor">Generate Dark-Themed Palette</button>
-            <button id="extractLightColor">Generate Light-Themed Palette</button>
-            <div>
-                <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
-            </div>
+      <div id="colorButtons">
+        <button id="extractDarkColor">Generate Dark-Themed Palette</button>
+        <button id="extractLightColor">Generate Light-Themed Palette</button>
+        <div>
+          <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
         </div>
+      </div>
     </div>
     <script src="main.js"></script>
-</body>
+  </body>
 </html>
