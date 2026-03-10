@@ -3,16 +3,39 @@ window.addEventListener("load", function () {
   const endYearSelection = document.getElementById("endYear");
   const filterOption = document.getElementById("genre");
   const searchInput = document.getElementById("searchInput");
-  const searchButton = document.getElementById("searchButton");
+  const searchButton = document.getElementById("searchBtn");
   const movieContainer = document.getElementById("moviesContainer");
-  const pageControls = document.getElementById("paginationControls");
+  const pageControls = document.getElementById("pageControls");
   const prevPageBtn = document.getElementById("prevPage");
   const nextPageBtn = document.getElementById("nextPage");
   const img = document.getElementById("moviePoster");
   const btn = document.getElementById("extractDarkColor");
   const lightBtn = document.getElementById("extractLightColor");
+  const yearError = document.getElementById("yearError");
 
   let currentPage = 1;
+  let searchMode = false;
+
+  // Set dynamic year max and default values
+  const currentYear = new Date().getFullYear();
+  startYearSelection.max = currentYear;
+  endYearSelection.max = currentYear;
+  startYearSelection.value = currentYear;
+  endYearSelection.value = currentYear;
+
+  // Year range validation
+  function validateYearRange() {
+    if (parseInt(startYearSelection.value) > parseInt(endYearSelection.value)) {
+      yearError.textContent = "Start year must not be greater than end year.";
+      yearError.style.display = "block";
+      return false;
+    }
+    yearError.style.display = "none";
+    return true;
+  }
+
+  startYearSelection.addEventListener("change", validateYearRange);
+  endYearSelection.addEventListener("change", validateYearRange);
 
   // Get Movie list
   async function fetchMovies(genreID, startYear, endYear, page) {
@@ -22,18 +45,19 @@ window.addEventListener("load", function () {
     if (movies.length === 0) {
       pageControls.style.display = "none";
     } else {
-      pageControls.style.display = "block";
+      pageControls.style.display = "flex";
     }
     populateMovies(movies);
   }
 
   function populateMovies(movies) {
+    movieContainer.replaceChildren();
     movies.forEach((movie) => {
       const card = document.createElement("button");
       card.classList.add("movieCard");
 
       card.addEventListener("click", () => {
-        img.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+        img.src = `/proxy-image?url=${encodeURIComponent(`https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`)}`;
       });
 
       const movieImg = document.createElement("img");
@@ -53,14 +77,13 @@ window.addEventListener("load", function () {
 
       card.appendChild(movieImg);
       card.appendChild(info);
-      if (movieContainer.children.length >= 20) {
-        movieContainer.replaceChildren(card);
-      }
       movieContainer.appendChild(card);
     });
   }
 
   filterOption.addEventListener("change", async () => {
+    searchMode = false;
+    if (!validateYearRange()) return;
     const currentGenreID = filterOption.value;
     const startYear = startYearSelection.value;
     const endYear = endYearSelection.value;
@@ -70,6 +93,8 @@ window.addEventListener("load", function () {
 
   // Search functionality
   async function fetchSearchResults(query) {
+    searchMode = true;
+    pageControls.style.display = "none";
     const url = `/api/searchmovies?query=${query}`;
     const response = await fetch(url);
     const movies = await response.json();
@@ -92,6 +117,7 @@ window.addEventListener("load", function () {
   // Pagination with TMDB API
 
   prevPageBtn.addEventListener("click", async () => {
+    if (searchMode) return;
     if (currentPage > 1) {
       currentPage--;
       const currentGenreID = filterOption.value;
@@ -102,6 +128,7 @@ window.addEventListener("load", function () {
   });
 
   nextPageBtn.addEventListener("click", async () => {
+    if (searchMode) return;
     currentPage++;
     const currentGenreID = filterOption.value;
     const startYear = startYearSelection.value;
@@ -172,6 +199,8 @@ window.addEventListener("load", function () {
   // Getting the color palatte
 
   async function extractDarkColors(theme) {
+    btn.disabled = true;
+    lightBtn.disabled = true;
     try {
       const base64Image = await getBase64FromImageUrl(img.src);
       if (!base64Image) {
@@ -229,6 +258,11 @@ window.addEventListener("load", function () {
       console.log("Extracted palette:", palette);
     } catch (err) {
       console.error("Error extracting colors:", err);
+      document.getElementById("colorValues").textContent =
+        "Failed to extract colors. Please try again.";
+    } finally {
+      btn.disabled = false;
+      lightBtn.disabled = false;
     }
   }
 
@@ -238,6 +272,8 @@ window.addEventListener("load", function () {
   });
 
   async function extractLightColors(theme) {
+    btn.disabled = true;
+    lightBtn.disabled = true;
     try {
       const base64Image = await getBase64FromImageUrl(img.src);
       if (!base64Image) {
@@ -295,6 +331,11 @@ window.addEventListener("load", function () {
       console.log("Extracted palette:", palette);
     } catch (err) {
       console.error("Error extracting colors:", err);
+      document.getElementById("colorValues").textContent =
+        "Failed to extract colors. Please try again.";
+    } finally {
+      btn.disabled = false;
+      lightBtn.disabled = false;
     }
   }
 

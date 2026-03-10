@@ -33,12 +33,12 @@ Small web app that extracts dark and light color palettes from movie posters and
 2. Create a `.env` in the project root (or set environment variables in your environment):
 
    ```
-   TMDB_API_KEY=your_tmdb_api_key
+   TMDB_ACCESS_TOKEN=your_tmdb_api_key
    OPENAI_API_KEY=your_openai_api_key
    PORT=8000   # optional
    ```
 
-3. Ensure the server implements the /api routes listed above and uses TMDB_API_KEY & OPENAI_API_KEY from env vars. Do not put either key in frontend/main.js.
+3. Ensure the server implements the /api routes listed above and uses TMDB_ACCESS_TOKEN & OPENAI_API_KEY from env vars. Do not put either key in frontend/main.js.
 
 ## Run
 

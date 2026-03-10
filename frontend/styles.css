@@ -71,7 +71,7 @@ h3 {
   justify-content: center;
   text-align: center;
   font-weight: 600;
-  margin: auto auto;
+  margin: auto;
   color: var(--lightTwo);
 }
 
@@ -122,7 +122,7 @@ input[type="number"]:focus {
   align-items: center;
   justify-content: center;
   gap: 15px;
-  margin: auto auto;
+  margin: auto;
 }
 
 #genre {
@@ -148,7 +148,7 @@ body.light-theme #genre {
 .search-bar {
   display: flex;
   align-items: center;
-  margin: auto auto;
+  margin: auto;
   gap: 10px;
 }
 
@@ -257,7 +257,7 @@ body.light-theme .movie-info {
   color: var(--darkOne);
 }
 
-#paginationControls {
+#pageControls {
   display: none;
   justify-content: center;
   align-items: center;
@@ -297,16 +297,6 @@ body.light-theme .movie-info {
   gap: 20px;
   margin-bottom: 40px;
 }
-
-/* p, section, div {
-    color: var(--lightOne);
-    margin-bottom: 1em;
-    max-width: 80vw;
-}
-
-body.light-theme p, body.light-theme section, body.light-theme div {
-    color: var(--darkOne);
-} */
 
 @media (max-width: 600px) {
   body {

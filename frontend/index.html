@@ -21,9 +21,7 @@
               id="startYear"
               type="number"
               min="1900"
-              max="2025"
               step="1"
-              value="2025"
             />
           </div>
           <div class="releaseDate-option">
@@ -33,12 +31,11 @@
               id="endYear"
               type="number"
               min="1900"
-              max="2025"
               step="1"
-              value="2025"
             />
           </div>
         </div>
+        <p id="yearError" style="color: red; font-size: 0.85rem; display: none;"></p>
       </div>
 
       <div class="filter-header">
@@ -78,13 +75,13 @@
             id="searchInput"
             placeholder="Search for a movie..."
           />
-          <button id="searchButton">Search</button>
+          <button id="searchBtn">Search</button>
         </div>
       </div>
     </div>
 
     <div id="moviesContainer"></div>
-    <div id="paginationControls">
+    <div id="pageControls">
       <button id="prevPage">Previous</button>
       <button id="nextPage">Next</button>
     </div>

@@ -70,6 +70,10 @@ app.get("/api/searchmovies", async (req, res) => {
 
 app.get("/proxy-image", async (req, res) => {
   const imageUrl = req.query.url;
+  const ALLOWED_HOST = "https://media.themoviedb.org";
+  if (!imageUrl || !imageUrl.startsWith(ALLOWED_HOST)) {
+    return res.status(400).send("Invalid image URL");
+  }
   try {
     const response = await fetch(imageUrl);
     res.set("Content-Type", response.headers.get("content-type"));
