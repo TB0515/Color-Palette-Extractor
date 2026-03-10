@@ -137,7 +137,10 @@ test('shows error message when extraction fails', async ({ page }) => {
 test('successful palette extraction applies CSS vars', async ({ page }) => {
   await page.selectOption('#genre', '28');
   await page.locator('.movieCard').first().click();
-  await page.locator('#extractDarkColor').click();
+  await Promise.all([
+    page.waitForResponse('/api/extract-colors'),
+    page.locator('#extractDarkColor').click(),
+  ]);
   const bg = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
   );
