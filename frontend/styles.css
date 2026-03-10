@@ -257,6 +257,12 @@ body.light-theme .movie-info {
   color: var(--darkOne);
 }
 
+#yearError {
+  color: red;
+  font-size: 0.85rem;
+  display: none;
+}
+
 #pageControls {
   display: none;
   justify-content: center;
@@ -287,9 +293,6 @@ body.light-theme .movie-info {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
 }
 
-#moviePoster.light-theme {
-  background-color: var(--lightOne);
-}
 
 #colorButtons {
   display: flex;

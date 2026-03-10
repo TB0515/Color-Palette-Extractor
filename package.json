@@ -1,8 +1,8 @@
 {
   "name": "color-palette-ai",
   "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
+  "description": "AI-powered color palette extractor from movie posters",
+  "main": "server.js",
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",

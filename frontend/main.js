@@ -39,15 +39,22 @@ window.addEventListener("load", function () {
 
   // Get Movie list
   async function fetchMovies(genreID, startYear, endYear, page) {
-    const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
-    const response = await fetch(url);
-    const movies = await response.json();
-    if (movies.length === 0) {
-      pageControls.style.display = "none";
-    } else {
-      pageControls.style.display = "flex";
+    try {
+      const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch movies: ${response.status}`);
+      }
+      const movies = await response.json();
+      if (movies.length === 0) {
+        pageControls.style.display = "none";
+      } else {
+        pageControls.style.display = "flex";
+      }
+      populateMovies(movies);
+    } catch (err) {
+      console.error("Error fetching movies:", err);
     }
-    populateMovies(movies);
   }
 
   function populateMovies(movies) {
@@ -93,12 +100,19 @@ window.addEventListener("load", function () {
 
   // Search functionality
   async function fetchSearchResults(query) {
-    searchMode = true;
-    pageControls.style.display = "none";
-    const url = `/api/searchmovies?query=${query}`;
-    const response = await fetch(url);
-    const movies = await response.json();
-    populateMovies(movies);
+    try {
+      searchMode = true;
+      pageControls.style.display = "none";
+      const url = `/api/searchmovies?query=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to search movies: ${response.status}`);
+      }
+      const movies = await response.json();
+      populateMovies(movies);
+    } catch (err) {
+      console.error("Error searching movies:", err);
+    }
   }
 
   searchButton.addEventListener("click", async () => {
@@ -141,6 +155,9 @@ window.addEventListener("load", function () {
   async function getBase64FromImageUrl(imageUrl) {
     const proxyUrl = `/proxy-image?url=${encodeURIComponent(imageUrl)}`;
     const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -167,38 +184,9 @@ window.addEventListener("load", function () {
     }
   }
 
-  // Structured Response Output
+  // Getting the color palette
 
-  let outputStructure = {
-    name: "poster_palette_schema",
-    strict: true,
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: [
-        "background",
-        "hover",
-        "button",
-        "darkOne",
-        "darkTwo",
-        "lightOne",
-        "lightTwo",
-      ],
-      properties: {
-        background: { type: "string" },
-        hover: { type: "string" },
-        button: { type: "string" },
-        darkOne: { type: "string" },
-        darkTwo: { type: "string" },
-        lightOne: { type: "string" },
-        lightTwo: { type: "string" },
-      },
-    },
-  };
-
-  // Getting the color palatte
-
-  async function extractDarkColors(theme) {
+  async function extractDarkColors() {
     btn.disabled = true;
     lightBtn.disabled = true;
     try {
@@ -211,51 +199,22 @@ window.addEventListener("load", function () {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          response_format: {
-            type: "json_schema",
-            json_schema: outputStructure,
-          },
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster.  Always choose a dark color for the background. Ensure all other colors provide good, accessible contrast on the dark background from the poster composition.",
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Extract color palette from this image as JSON following the defined roles.",
-                },
-                {
-                  type: "image_url",
-                  image_url: { url: `data:image/png;base64,${base64Image}` },
-                },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ imageBase64: base64Image, theme: "dark" }),
       });
       if (!response.ok) {
         const err = await response.json();
-        console.error("API error:", err);
         throw new Error(
-          `OpenAI API error: ${response.status} ${err.error?.message || ""}`,
+          `API error: ${response.status} ${err.error?.message || ""}`,
         );
       }
       const data = await response.json();
-      console.log(data);
       const palette = JSON.parse(data.choices[0].message.content);
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
         2,
       );
-      applyPaletteToTheme(palette, theme);
-      console.log("Extracted palette:", palette);
+      applyPaletteToTheme(palette, "dark");
     } catch (err) {
       console.error("Error extracting colors:", err);
       document.getElementById("colorValues").textContent =
@@ -268,10 +227,10 @@ window.addEventListener("load", function () {
 
   btn.addEventListener("click", () => {
     document.getElementById("colorValues").textContent = "Extracting colors...";
-    extractDarkColors("dark");
+    extractDarkColors();
   });
 
-  async function extractLightColors(theme) {
+  async function extractLightColors() {
     btn.disabled = true;
     lightBtn.disabled = true;
     try {
@@ -284,51 +243,22 @@ window.addEventListener("load", function () {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          response_format: {
-            type: "json_schema",
-            json_schema: outputStructure,
-          },
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition.",
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Extract color palette from this image as JSON following the defined roles.",
-                },
-                {
-                  type: "image_url",
-                  image_url: { url: `data:image/png;base64,${base64Image}` },
-                },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ imageBase64: base64Image, theme: "light" }),
       });
       if (!response.ok) {
         const err = await response.json();
-        console.error("API error:", err);
         throw new Error(
-          `OpenAI API error: ${response.status} ${err.error?.message || ""}`,
+          `API error: ${response.status} ${err.error?.message || ""}`,
         );
       }
       const data = await response.json();
-      console.log(data);
       const palette = JSON.parse(data.choices[0].message.content);
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
         2,
       );
-      applyPaletteToTheme(palette, theme);
-      console.log("Extracted palette:", palette);
+      applyPaletteToTheme(palette, "light");
     } catch (err) {
       console.error("Error extracting colors:", err);
       document.getElementById("colorValues").textContent =
@@ -341,6 +271,6 @@ window.addEventListener("load", function () {
 
   lightBtn.addEventListener("click", () => {
     document.getElementById("colorValues").textContent = "Extracting colors...";
-    extractLightColors("light");
+    extractLightColors();
   });
 });
