@@ -2,6 +2,10 @@
 
 A web app that pulls movie posters from The Movie Database (TMDB) and uses GPT-4o's vision to extract colour palettes from them. Pick a poster, hit generate, and the whole UI recolours itself instantly using the extracted palette.
 
+## Live Demo
+
+https://color-palette-extractor-p2kn.onrender.com
+
 ## What it does
 
 - Browse movies filtered by genre and release year, or search by title
