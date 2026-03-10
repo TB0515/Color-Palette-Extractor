@@ -35,6 +35,10 @@ h3 {
   color: var(--lightOne);
 }
 
+body.light-theme {
+  color: var(--darkOne);
+}
+
 body.light-theme h1,
 body.light-theme h2,
 body.light-theme h3 {
@@ -170,7 +174,7 @@ body.light-theme .search-bar input[type="text"] {
 
 button {
   background-color: var(--button);
-  color: var(--lightOne);
+  color: var(--darkOne);
   border: none;
   padding: 12px 24px;
   border-radius: 8px;

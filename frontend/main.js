@@ -64,7 +64,9 @@ window.addEventListener("load", function () {
       card.classList.add("movieCard");
 
       card.addEventListener("click", () => {
-        img.src = `/proxy-image?url=${encodeURIComponent(`https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`)}`;
+        const tmdbUrl = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+        img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
+        img.dataset.tmdbUrl = tmdbUrl;
       });
 
       const movieImg = document.createElement("img");
@@ -190,7 +192,7 @@ window.addEventListener("load", function () {
     btn.disabled = true;
     lightBtn.disabled = true;
     try {
-      const base64Image = await getBase64FromImageUrl(img.src);
+      const base64Image = await getBase64FromImageUrl(img.dataset.tmdbUrl);
       if (!base64Image) {
         throw new Error("Base64 image data is empty");
       }
@@ -234,7 +236,7 @@ window.addEventListener("load", function () {
     btn.disabled = true;
     lightBtn.disabled = true;
     try {
-      const base64Image = await getBase64FromImageUrl(img.src);
+      const base64Image = await getBase64FromImageUrl(img.dataset.tmdbUrl);
       if (!base64Image) {
         throw new Error("Base64 image data is empty");
       }
