@@ -38,7 +38,9 @@ app.get("/api/movies", async (req, res) => {
     };
     const response = await fetch(url, options);
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Failed to fetch from TMDB" });
+      return res
+        .status(response.status)
+        .json({ error: "Failed to fetch from TMDB" });
     }
     const data = await response.json();
     res.json(data.results ?? []);
@@ -63,7 +65,9 @@ app.get("/api/searchmovies", async (req, res) => {
   try {
     const response = await fetch(url, options);
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Failed to fetch from TMDB" });
+      return res
+        .status(response.status)
+        .json({ error: "Failed to fetch from TMDB" });
     }
     const data = await response.json();
     res.json(data.results ?? []);
@@ -76,8 +80,16 @@ app.get("/api/searchmovies", async (req, res) => {
 
 app.get("/proxy-image", async (req, res) => {
   const imageUrl = req.query.url;
-  const ALLOWED_HOST = "https://media.themoviedb.org";
-  if (!imageUrl || !imageUrl.startsWith(ALLOWED_HOST)) {
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(imageUrl);
+  } catch {
+    return res.status(400).send("Invalid image URL");
+  }
+  if (
+    parsedUrl.protocol !== "https:" ||
+    parsedUrl.hostname !== "media.themoviedb.org"
+  ) {
     return res.status(400).send("Invalid image URL");
   }
   try {
