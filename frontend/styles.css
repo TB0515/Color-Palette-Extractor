@@ -285,6 +285,7 @@ body.light-theme .movieCard img {
 .movie-info {
   text-align: center;
   overflow-wrap: break-word;
+  text-wrap: wrap;
   color: var(--lightOne);
 }
 
@@ -534,7 +535,6 @@ body.light-theme #savePaletteBtn {
 
 #removeSavedBtn:hover {
   opacity: 0.85;
-  transform: none;
 }
 
 #cachedBadge {
