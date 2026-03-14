@@ -69,3 +69,41 @@ test("movies rejects startYear greater than endYear", async ({ request }) => {
   );
   expect(res.status()).toBe(400);
 });
+
+test("movies rejects missing genreID", async ({ request }) => {
+  const res = await request.get("/api/movies?startYear=2000&endYear=2020");
+  expect(res.status()).toBe(400);
+});
+
+test("movies rejects non-numeric genreID", async ({ request }) => {
+  const res = await request.get(
+    "/api/movies?genreID=abc&startYear=2000&endYear=2020",
+  );
+  expect(res.status()).toBe(400);
+});
+
+test("movies rejects non-numeric endYear", async ({ request }) => {
+  const res = await request.get(
+    "/api/movies?genreID=28&startYear=2000&endYear=abc",
+  );
+  expect(res.status()).toBe(400);
+});
+
+test("searchmovies rejects whitespace-only query", async ({ request }) => {
+  const res = await request.get("/api/searchmovies?query=%20");
+  expect(res.status()).toBe(400);
+});
+
+test("extract-colors rejects missing imageBase64", async ({ request }) => {
+  const res = await request.post("/api/extract-colors", {
+    data: { theme: "dark" },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("extract-colors rejects invalid theme", async ({ request }) => {
+  const res = await request.post("/api/extract-colors", {
+    data: { imageBase64: "abc123", theme: "invalid" },
+  });
+  expect(res.status()).toBe(400);
+});
