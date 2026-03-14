@@ -521,6 +521,15 @@ body.light-theme #savePaletteBtn {
   color: var(--darkOne);
 }
 
+#removeSavedBtn {
+  background-color: var(--error);
+  color: white;
+}
+
+#removeSavedBtn:hover {
+  opacity: 0.85;
+}
+
 #cachedBadge {
   font-size: 0.85rem;
   color: var(--lightTwo);

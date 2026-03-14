@@ -164,7 +164,11 @@ app.post("/api/extract-colors", async (req, res) => {
       .collection("palettes")
       .findOne({ movieId: Number(movieId), theme });
     if (cached) {
-      return res.json({ cached: true, palette: cached.palette });
+      return res.json({
+        cached: true,
+        palette: cached.palette,
+        id: cached._id,
+      });
     }
   }
 
