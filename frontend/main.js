@@ -13,6 +13,7 @@ window.addEventListener("load", function () {
   const lightBtn = document.getElementById("extractLightColor");
   const yearError = document.getElementById("yearError");
   const saveBtn = document.getElementById("savePaletteBtn");
+  const removeSavedBtn = document.getElementById("removeSavedBtn");
   const cachedBadge = document.getElementById("cachedBadge");
   const sidebarToggle = document.getElementById("sidebarToggle");
   const sidebar = document.getElementById("savedSidebar");
@@ -24,6 +25,7 @@ window.addEventListener("load", function () {
   let searchMode = false;
   let lastPalette = null;
   let lastTheme = null;
+  let lastSavedId = null;
 
   // Set dynamic year max and default values
   const currentYear = new Date().getFullYear();
@@ -86,7 +88,9 @@ window.addEventListener("load", function () {
         img.classList.remove("hidden");
         document.getElementById("posterPlaceholder").style.display = "none";
         saveBtn.hidden = true;
+        removeSavedBtn.hidden = true;
         cachedBadge.hidden = true;
+        lastSavedId = null;
       });
 
       const movieImg = document.createElement("img");
@@ -255,16 +259,20 @@ window.addEventListener("load", function () {
       let palette;
       if (data.cached) {
         palette = data.palette;
+        lastSavedId = data.id;
         cachedBadge.hidden = false;
         saveBtn.hidden = true;
+        removeSavedBtn.hidden = false;
       } else {
         try {
           palette = JSON.parse(data.choices[0].message.content);
         } catch {
           throw new Error("Received invalid color data from API");
         }
+        lastSavedId = null;
         cachedBadge.hidden = true;
         saveBtn.hidden = false;
+        removeSavedBtn.hidden = true;
       }
       lastPalette = palette;
       lastTheme = "dark";
@@ -324,16 +332,20 @@ window.addEventListener("load", function () {
       let palette;
       if (data.cached) {
         palette = data.palette;
+        lastSavedId = data.id;
         cachedBadge.hidden = false;
         saveBtn.hidden = true;
+        removeSavedBtn.hidden = false;
       } else {
         try {
           palette = JSON.parse(data.choices[0].message.content);
         } catch {
           throw new Error("Received invalid color data from API");
         }
+        lastSavedId = null;
         cachedBadge.hidden = true;
         saveBtn.hidden = false;
+        removeSavedBtn.hidden = true;
       }
       lastPalette = palette;
       lastTheme = "light";
@@ -378,13 +390,36 @@ window.addEventListener("load", function () {
         }),
       });
       if (!response.ok) throw new Error("Save failed");
+      const saved = await response.json();
+      lastSavedId = saved._id;
       saveBtn.hidden = true;
+      removeSavedBtn.hidden = false;
       cachedBadge.hidden = false;
       if (!sidebar.hidden) await loadSavedPalettes();
     } catch (err) {
       console.error("Error saving palette:", err);
     } finally {
       saveBtn.disabled = false;
+    }
+  });
+
+  removeSavedBtn.addEventListener("click", async () => {
+    if (!lastSavedId) return;
+    removeSavedBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/palettes/${lastSavedId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Remove failed");
+      lastSavedId = null;
+      removeSavedBtn.hidden = true;
+      cachedBadge.hidden = true;
+      saveBtn.hidden = false;
+      if (!sidebar.hidden) await loadSavedPalettes();
+    } catch (err) {
+      console.error("Error removing palette:", err);
+    } finally {
+      removeSavedBtn.disabled = false;
     }
   });
 
@@ -415,7 +450,15 @@ window.addEventListener("load", function () {
 
       const swatches = document.createElement("div");
       swatches.classList.add("sidebar-swatches");
-      ["background", "button", "darkOne", "lightOne"].forEach((key) => {
+      [
+        "background",
+        "hover",
+        "button",
+        "darkOne",
+        "darkTwo",
+        "lightOne",
+        "lightTwo",
+      ].forEach((key) => {
         const swatch = document.createElement("span");
         swatch.classList.add("sidebar-swatch");
         swatch.style.backgroundColor = p.palette[key];
