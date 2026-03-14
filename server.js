@@ -153,7 +153,7 @@ app.post("/api/extract-colors", async (req, res) => {
     return res.status(400).json({ error: "Invalid request" });
   }
 
-  // Reject payloads where decoded image would exceed 8 MB
+  // base64 encodes ~4/3 of raw bytes; 10.9 MB base64 ≈ 8 MB decoded image
   if (imageBase64.length > 10_900_000) {
     return res.status(413).json({ error: "Image too large (max 8 MB)" });
   }
@@ -243,8 +243,14 @@ app.post("/api/extract-colors", async (req, res) => {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      return res.status(response.status).json(err);
+      console.error(
+        "OpenAI API error:",
+        response.status,
+        await response.text(),
+      );
+      return res
+        .status(502)
+        .json({ error: "Color extraction service unavailable" });
     }
 
     const data = await response.json();
