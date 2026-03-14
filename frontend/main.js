@@ -66,6 +66,8 @@ window.addEventListener("load", function () {
       return true;
     } catch (err) {
       console.error("Error fetching movies:", err);
+      movieContainer.innerHTML =
+        '<p class="fetch-error">Failed to load movies. Please try again.</p>';
       return false;
     }
   }
@@ -139,6 +141,8 @@ window.addEventListener("load", function () {
       populateMovies(movies);
     } catch (err) {
       console.error("Error searching movies:", err);
+      movieContainer.innerHTML =
+        '<p class="fetch-error">Search failed. Please try again.</p>';
     }
   }
 
@@ -430,6 +434,8 @@ window.addEventListener("load", function () {
       renderSidebar(await res.json());
     } catch (err) {
       console.error("Error loading palettes:", err);
+      sidebarList.innerHTML =
+        '<p class="fetch-error">Failed to load saved palettes.</p>';
     }
   }
 

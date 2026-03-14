@@ -299,6 +299,13 @@ body.light-theme .movie-info {
   display: none;
 }
 
+.fetch-error {
+  color: var(--error);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
 #pageControls {
   display: none;
   justify-content: center;
