@@ -81,6 +81,11 @@ window.addEventListener("load", function () {
       card.setAttribute("aria-label", "Select " + movie.title);
 
       card.addEventListener("click", () => {
+        if (!movie.poster_path) {
+          document.getElementById("colorValues").textContent =
+            "No poster available for this movie.";
+          return;
+        }
         const tmdbUrl = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
         img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
         img.alt = movie.title;
@@ -96,7 +101,9 @@ window.addEventListener("load", function () {
       });
 
       const movieImg = document.createElement("img");
-      movieImg.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+      movieImg.src = movie.poster_path
+        ? `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`
+        : PLACEHOLDER_IMG;
       movieImg.alt = movie.title;
       movieImg.onerror = function () {
         this.onerror = null;
@@ -221,8 +228,8 @@ window.addEventListener("load", function () {
 
   function applyPaletteToTheme(palette, theme) {
     const root = document.documentElement;
-    for (const key in palette) {
-      root.style.setProperty(`--${key}`, palette[key]);
+    for (const [key, value] of Object.entries(palette)) {
+      root.style.setProperty(`--${key}`, value);
     }
     if (theme === "light") {
       document.body.classList.add("light-theme");
@@ -255,9 +262,7 @@ window.addEventListener("load", function () {
       });
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(
-          `API error: ${response.status} ${err.error?.message || ""}`,
-        );
+        throw new Error(`API error: ${response.status} ${err.error || ""}`);
       }
       const data = await response.json();
       let palette;
@@ -328,9 +333,7 @@ window.addEventListener("load", function () {
       });
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(
-          `API error: ${response.status} ${err.error?.message || ""}`,
-        );
+        throw new Error(`API error: ${response.status} ${err.error || ""}`);
       }
       const data = await response.json();
       let palette;
