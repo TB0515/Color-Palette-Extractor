@@ -19,8 +19,6 @@ window.addEventListener("load", function () {
   const sidebar = document.getElementById("savedSidebar");
   const sidebarList = document.getElementById("sidebarList");
 
-  const PLACEHOLDER_IMG = "./images/movie_poster_placeholder.png";
-
   let currentPage = 1;
   let searchMode = false;
   let lastPalette = null;
@@ -80,28 +78,56 @@ window.addEventListener("load", function () {
       card.classList.add("movieCard");
       card.setAttribute("aria-label", "Select " + movie.title);
 
+      const posterPlaceholder = document.getElementById("posterPlaceholder");
+
       card.addEventListener("click", () => {
-        const tmdbUrl = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
-        img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
-        img.alt = movie.title;
-        img.dataset.tmdbUrl = tmdbUrl;
-        img.dataset.movieId = movie.id;
-        img.dataset.movieTitle = movie.title;
-        img.classList.remove("hidden");
-        document.getElementById("posterPlaceholder").style.display = "none";
+        if (movie.poster_path) {
+          const tmdbUrl = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+          img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
+          img.alt = movie.title;
+          img.dataset.tmdbUrl = tmdbUrl;
+          img.dataset.movieId = movie.id;
+          img.dataset.movieTitle = movie.title;
+          img.classList.remove("hidden");
+          posterPlaceholder.textContent = "Select a movie poster";
+          posterPlaceholder.style.display = "none";
+        } else if (movie.backdrop_path) {
+          const tmdbUrl = `https://media.themoviedb.org/t/p/w780${movie.backdrop_path}`;
+          img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
+          img.alt = movie.title;
+          img.dataset.tmdbUrl = tmdbUrl;
+          img.dataset.movieId = movie.id;
+          img.dataset.movieTitle = movie.title;
+          img.classList.remove("hidden");
+          posterPlaceholder.style.display = "none";
+        } else {
+          img.classList.add("hidden");
+          img.dataset.tmdbUrl = "";
+          posterPlaceholder.textContent =
+            "Select a different movie, this one doesn't have a poster or image to generate colours from.";
+          posterPlaceholder.style.display = "";
+        }
         saveBtn.hidden = true;
         removeSavedBtn.hidden = true;
         cachedBadge.hidden = true;
         lastSavedId = null;
       });
 
-      const movieImg = document.createElement("img");
-      movieImg.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
-      movieImg.alt = movie.title;
-      movieImg.onerror = function () {
-        this.onerror = null;
-        this.src = PLACEHOLDER_IMG;
-      };
+      let movieImgEl;
+      if (movie.poster_path) {
+        movieImgEl = document.createElement("img");
+        movieImgEl.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+        movieImgEl.alt = movie.title;
+      } else if (movie.backdrop_path) {
+        movieImgEl = document.createElement("img");
+        movieImgEl.src = `https://media.themoviedb.org/t/p/w300${movie.backdrop_path}`;
+        movieImgEl.alt = movie.title;
+      } else {
+        movieImgEl = document.createElement("div");
+        movieImgEl.classList.add("no-poster-text");
+        movieImgEl.textContent = "No poster available";
+      }
+
       const info = document.createElement("div");
       info.classList.add("movie-info");
 
@@ -110,7 +136,7 @@ window.addEventListener("load", function () {
 
       info.appendChild(nameEl);
 
-      card.appendChild(movieImg);
+      card.appendChild(movieImgEl);
       card.appendChild(info);
       fragment.appendChild(card);
     });

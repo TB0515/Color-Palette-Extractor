@@ -282,6 +282,27 @@ body.light-theme .movieCard img {
   background-color: var(--lightOne);
 }
 
+.no-poster-text {
+  width: 130px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--lightTwo);
+  border-radius: 8px;
+  background-color: var(--darkOne);
+  margin-bottom: 10px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+body.light-theme .no-poster-text {
+  color: var(--darkTwo);
+  background-color: var(--lightOne);
+}
+
 .movie-info {
   text-align: center;
   overflow-wrap: break-word;
