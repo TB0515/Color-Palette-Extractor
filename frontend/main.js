@@ -228,6 +228,11 @@ window.addEventListener("load", function () {
   }
 
   btn.addEventListener("click", () => {
+    if (!img.dataset.tmdbUrl) {
+      document.getElementById("colorValues").textContent =
+        "Please select a movie poster first.";
+      return;
+    }
     document.getElementById("colorValues").textContent = "Extracting colors...";
     extractDarkColors();
   });
@@ -272,6 +277,11 @@ window.addEventListener("load", function () {
   }
 
   lightBtn.addEventListener("click", () => {
+    if (!img.dataset.tmdbUrl) {
+      document.getElementById("colorValues").textContent =
+        "Please select a movie poster first.";
+      return;
+    }
     document.getElementById("colorValues").textContent = "Extracting colors...";
     extractLightColors();
   });
