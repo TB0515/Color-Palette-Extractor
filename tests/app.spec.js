@@ -168,6 +168,28 @@ test("year error shown when startYear is greater than endYear", async ({
   );
 });
 
+test("next page does not advance currentPage on failed fetch", async ({
+  page,
+}) => {
+  await page.selectOption("#genre", "28");
+  await expect(page.locator(".movieCard")).toHaveCount(20);
+
+  // Make next fetch fail
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ status: 500, json: { error: "fail" } }),
+  );
+  await page.locator("#nextPage").click();
+
+  // Re-route to succeed and click next again — should still request page 2, not 3
+  let requestedPage;
+  await page.route("/api/movies*", (route) => {
+    requestedPage = new URL(route.request().url()).searchParams.get("page");
+    route.fulfill({ json: mockMovies });
+  });
+  await page.locator("#nextPage").click();
+  expect(requestedPage).toBe("2");
+});
+
 test("extract shows message when no poster selected", async ({ page }) => {
   await page.locator("#extractDarkColor").click();
   await expect(page.locator("#colorValues")).toContainText(
