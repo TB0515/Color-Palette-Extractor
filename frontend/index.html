@@ -80,6 +80,8 @@
       </div>
     </div>
 
+    <button id="sidebarToggle">Saved Palettes</button>
+
     <div id="moviesContainer"></div>
     <div id="pageControls">
       <button id="prevPage" aria-label="Previous page">Previous</button>
@@ -97,6 +99,10 @@
       <div id="colorButtons">
         <button id="extractDarkColor">Generate Dark-Themed Palette</button>
         <button id="extractLightColor">Generate Light-Themed Palette</button>
+        <button id="savePaletteBtn" hidden>Save Palette</button>
+        <span id="cachedBadge" hidden aria-live="polite"
+          >Loaded from saved</span
+        >
         <div>
           <p id="colorPalette">
             Color Palette:
@@ -105,6 +111,10 @@
         </div>
       </div>
     </div>
+    <aside id="savedSidebar" hidden>
+      <h2>Saved Palettes</h2>
+      <div id="sidebarList"></div>
+    </aside>
     <script src="main.js"></script>
   </body>
 </html>

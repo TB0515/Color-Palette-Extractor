@@ -107,3 +107,50 @@ test("extract-colors rejects invalid theme", async ({ request }) => {
   });
   expect(res.status()).toBe(400);
 });
+
+test("GET /api/palettes returns 200 with an array or 503 when DB unavailable", async ({
+  request,
+}) => {
+  const res = await request.get("/api/palettes");
+  if (res.status() === 200) {
+    const data = await res.json();
+    expect(Array.isArray(data)).toBe(true);
+  } else {
+    expect(res.status()).toBe(503);
+  }
+});
+
+test("POST /api/palettes rejects missing movieId", async ({ request }) => {
+  const res = await request.post("/api/palettes", {
+    data: { movieTitle: "Test", theme: "dark", palette: {} },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("POST /api/palettes rejects invalid theme", async ({ request }) => {
+  const res = await request.post("/api/palettes", {
+    data: { movieId: 1, movieTitle: "Test", theme: "invalid", palette: {} },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("POST /api/palettes rejects missing palette", async ({ request }) => {
+  const res = await request.post("/api/palettes", {
+    data: { movieId: 1, movieTitle: "Test", theme: "dark" },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("DELETE /api/palettes/:id returns 400 for malformed id", async ({
+  request,
+}) => {
+  const res = await request.delete("/api/palettes/not-an-id");
+  expect(res.status()).toBe(400);
+});
+
+test("DELETE /api/palettes/:id returns 404 or 503 for non-existent id", async ({
+  request,
+}) => {
+  const res = await request.delete("/api/palettes/000000000000000000000000");
+  expect([404, 503]).toContain(res.status());
+});

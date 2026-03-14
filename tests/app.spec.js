@@ -9,6 +9,7 @@ const mockMovies = Array.from({ length: 20 }, (_, i) => ({
 const mockFewMovies = mockMovies.slice(0, 5);
 
 const mockPalette = {
+  cached: false,
   choices: [
     {
       message: {
@@ -203,4 +204,67 @@ test("year inputs default to current year", async ({ page }) => {
   const endVal = await page.inputValue("#endYear");
   expect(startVal).toBe(currentYear);
   expect(endVal).toBe(currentYear);
+});
+
+test("save palette button is hidden by default", async ({ page }) => {
+  await expect(page.locator("#savePaletteBtn")).toBeHidden();
+});
+
+test("save palette button appears after successful extraction", async ({
+  page,
+}) => {
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard").first().click();
+  await Promise.all([
+    page.waitForResponse("/api/extract-colors"),
+    page.locator("#extractDarkColor").click(),
+  ]);
+  await expect(page.locator("#savePaletteBtn")).toBeVisible();
+});
+
+test("cached badge shown and save button hidden when extract-colors returns cached:true", async ({
+  page,
+}) => {
+  await page.route("/api/extract-colors", (route) =>
+    route.fulfill({
+      json: {
+        cached: true,
+        palette: {
+          background: "#111",
+          hover: "#222",
+          button: "#333",
+          darkOne: "#444",
+          darkTwo: "#555",
+          lightOne: "#eee",
+          lightTwo: "#ddd",
+        },
+      },
+    }),
+  );
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard").first().click();
+  await Promise.all([
+    page.waitForResponse("/api/extract-colors"),
+    page.locator("#extractDarkColor").click(),
+  ]);
+  await expect(page.locator("#cachedBadge")).toBeVisible();
+  await expect(page.locator("#savePaletteBtn")).toBeHidden();
+});
+
+test("sidebar is hidden by default", async ({ page }) => {
+  await expect(page.locator("#savedSidebar")).toBeHidden();
+});
+
+test("sidebar toggle button shows the sidebar", async ({ page }) => {
+  await page.route("/api/palettes*", (route) => route.fulfill({ json: [] }));
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#savedSidebar")).toBeVisible();
+});
+
+test("sidebar toggle button closes the sidebar", async ({ page }) => {
+  await page.route("/api/palettes*", (route) => route.fulfill({ json: [] }));
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#savedSidebar")).toBeVisible();
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#savedSidebar")).toBeHidden();
 });

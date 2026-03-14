@@ -5,15 +5,28 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import path from "path";
+import { MongoClient, ObjectId } from "mongodb";
 
 dotenv.config();
 
-const REQUIRED_ENV = ["TMDB_ACCESS_TOKEN", "OPENAI_API_KEY"];
+const REQUIRED_ENV = ["TMDB_ACCESS_TOKEN", "OPENAI_API_KEY", "MONGODB_URI"];
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
     console.error(`Missing required environment variable: ${key}`);
     process.exit(1);
   }
+}
+
+const mongoClient = new MongoClient(process.env.MONGODB_URI);
+let db;
+
+async function connectDB() {
+  await mongoClient.connect();
+  db = mongoClient.db();
+  await db
+    .collection("palettes")
+    .createIndex({ movieId: 1, theme: 1 }, { unique: true });
+  console.log("Connected to MongoDB");
 }
 
 const PORT = process.env.PORT || 8000;
@@ -129,7 +142,7 @@ app.get("/proxy-image", async (req, res) => {
 
 // OpenAI color extraction proxy
 app.post("/api/extract-colors", async (req, res) => {
-  const { imageBase64, theme } = req.body;
+  const { imageBase64, theme, movieId } = req.body;
   if (!imageBase64 || !["dark", "light"].includes(theme)) {
     return res.status(400).json({ error: "Invalid request" });
   }
@@ -137,6 +150,16 @@ app.post("/api/extract-colors", async (req, res) => {
   // Reject payloads where decoded image would exceed 8 MB
   if (imageBase64.length > 10_900_000) {
     return res.status(413).json({ error: "Image too large (max 8 MB)" });
+  }
+
+  // Cache lookup — only for saved palettes (skipped if DB not ready)
+  if (db && movieId && ["dark", "light"].includes(theme)) {
+    const cached = await db
+      .collection("palettes")
+      .findOne({ movieId: Number(movieId), theme });
+    if (cached) {
+      return res.json({ cached: true, palette: cached.palette });
+    }
   }
 
   const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -215,15 +238,88 @@ app.post("/api/extract-colors", async (req, res) => {
     }
 
     const data = await response.json();
-    res.json(data);
+    res.json({ cached: false, choices: data.choices });
   } catch (err) {
     console.error("Error extracting colors:", err);
     res.status(500).json({ error: "Failed to extract colors" });
   }
 });
 
+// Saved palettes routes
+app.get("/api/palettes", async (_req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not ready" });
+  try {
+    const palettes = await db
+      .collection("palettes")
+      .find()
+      .sort({ savedAt: -1 })
+      .toArray();
+    res.json(palettes);
+  } catch (err) {
+    console.error("Error fetching palettes:", err);
+    res.status(500).json({ error: "Failed to fetch palettes" });
+  }
+});
+
+app.post("/api/palettes", async (req, res) => {
+  const { movieId, movieTitle, theme, palette } = req.body;
+  if (
+    !movieId ||
+    !movieTitle ||
+    !["dark", "light"].includes(theme) ||
+    !palette ||
+    typeof palette !== "object"
+  ) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+  if (!db) return res.status(503).json({ error: "Database not ready" });
+  try {
+    const doc = {
+      movieId: Number(movieId),
+      movieTitle: String(movieTitle),
+      theme,
+      palette,
+      savedAt: new Date(),
+    };
+    await db
+      .collection("palettes")
+      .replaceOne({ movieId: doc.movieId, theme }, doc, { upsert: true });
+    const saved = await db
+      .collection("palettes")
+      .findOne({ movieId: doc.movieId, theme });
+    res.status(201).json(saved);
+  } catch (err) {
+    console.error("Error saving palette:", err);
+    res.status(500).json({ error: "Failed to save palette" });
+  }
+});
+
+app.delete("/api/palettes/:id", async (req, res) => {
+  let objectId;
+  try {
+    objectId = new ObjectId(req.params.id);
+  } catch {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+  if (!db) return res.status(503).json({ error: "Database not ready" });
+  try {
+    const result = await db.collection("palettes").deleteOne({ _id: objectId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Palette not found" });
+    }
+    res.status(204).end();
+  } catch (err) {
+    console.error("Error deleting palette:", err);
+    res.status(500).json({ error: "Failed to delete palette" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "./frontend/index.html"));
+});
+
+connectDB().catch((err) => {
+  console.error("Failed to connect to MongoDB:", err);
 });
 
 app.listen(PORT, () => {
