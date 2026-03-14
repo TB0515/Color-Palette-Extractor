@@ -1,11 +1,11 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './tests',
-  use: { baseURL: 'http://localhost:8000' },
+  testDir: "./tests",
+  use: { baseURL: "http://localhost:8000" },
   webServer: {
-    command: 'npm start',
-    url: 'http://localhost:8000',
+    command: "npm start",
+    url: "http://localhost:8000",
     reuseExistingServer: true,
   },
 });
