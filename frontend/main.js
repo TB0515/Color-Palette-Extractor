@@ -52,8 +52,10 @@ window.addEventListener("load", function () {
         pageControls.style.display = "flex";
       }
       populateMovies(movies);
+      return true;
     } catch (err) {
       console.error("Error fetching movies:", err);
+      return false;
     }
   }
 
@@ -135,21 +137,33 @@ window.addEventListener("load", function () {
   prevPageBtn.addEventListener("click", async () => {
     if (searchMode) return;
     if (currentPage > 1) {
-      currentPage--;
+      const prevPage = currentPage - 1;
       const currentGenreID = filterOption.value;
       const startYear = startYearSelection.value;
       const endYear = endYearSelection.value;
-      await fetchMovies(currentGenreID, startYear, endYear, currentPage);
+      const success = await fetchMovies(
+        currentGenreID,
+        startYear,
+        endYear,
+        prevPage,
+      );
+      if (success) currentPage = prevPage;
     }
   });
 
   nextPageBtn.addEventListener("click", async () => {
     if (searchMode) return;
-    currentPage++;
+    const nextPage = currentPage + 1;
     const currentGenreID = filterOption.value;
     const startYear = startYearSelection.value;
     const endYear = endYearSelection.value;
-    await fetchMovies(currentGenreID, startYear, endYear, currentPage);
+    const success = await fetchMovies(
+      currentGenreID,
+      startYear,
+      endYear,
+      nextPage,
+    );
+    if (success) currentPage = nextPage;
   });
 
   //convert url to file object and then file to base64 string
