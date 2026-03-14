@@ -13,6 +13,8 @@ window.addEventListener("load", function () {
   const lightBtn = document.getElementById("extractLightColor");
   const yearError = document.getElementById("yearError");
 
+  const PLACEHOLDER_IMG = "./images/movie_poster_placeholder.png";
+
   let currentPage = 1;
   let searchMode = false;
 
@@ -61,13 +63,16 @@ window.addEventListener("load", function () {
 
   function populateMovies(movies) {
     movieContainer.replaceChildren();
+    const fragment = document.createDocumentFragment();
     movies.forEach((movie) => {
       const card = document.createElement("button");
       card.classList.add("movieCard");
+      card.setAttribute("aria-label", "Select " + movie.title);
 
       card.addEventListener("click", () => {
         const tmdbUrl = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
         img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
+        img.alt = movie.title;
         img.dataset.tmdbUrl = tmdbUrl;
       });
 
@@ -76,7 +81,7 @@ window.addEventListener("load", function () {
       movieImg.alt = movie.title;
       movieImg.onerror = function () {
         this.onerror = null;
-        this.src = "./images/movie_poster_placeholder.png";
+        this.src = PLACEHOLDER_IMG;
       };
       const info = document.createElement("div");
       info.classList.add("movie-info");
@@ -88,8 +93,9 @@ window.addEventListener("load", function () {
 
       card.appendChild(movieImg);
       card.appendChild(info);
-      movieContainer.appendChild(card);
+      fragment.appendChild(card);
     });
+    movieContainer.appendChild(fragment);
   }
 
   filterOption.addEventListener("change", async () => {
@@ -120,7 +126,7 @@ window.addEventListener("load", function () {
   }
 
   searchButton.addEventListener("click", async () => {
-    const query = searchInput.value.toLowerCase();
+    const query = searchInput.value.trim().toLowerCase();
     if (!query) return;
     await fetchSearchResults(query);
   });
@@ -178,6 +184,10 @@ window.addEventListener("load", function () {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
+        if (!reader.result || !reader.result.includes(",")) {
+          reject(new Error("Unexpected data URL format"));
+          return;
+        }
         const base64data = reader.result.split(",")[1];
         resolve(base64data);
       };
@@ -224,7 +234,12 @@ window.addEventListener("load", function () {
         );
       }
       const data = await response.json();
-      const palette = JSON.parse(data.choices[0].message.content);
+      let palette;
+      try {
+        palette = JSON.parse(data.choices[0].message.content);
+      } catch {
+        throw new Error("Received invalid color data from API");
+      }
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
@@ -273,7 +288,12 @@ window.addEventListener("load", function () {
         );
       }
       const data = await response.json();
-      const palette = JSON.parse(data.choices[0].message.content);
+      let palette;
+      try {
+        palette = JSON.parse(data.choices[0].message.content);
+      } catch {
+        throw new Error("Received invalid color data from API");
+      }
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,

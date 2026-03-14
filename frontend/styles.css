@@ -6,6 +6,7 @@
   --darkTwo: #555;
   --lightOne: #e0e0e0;
   --lightTwo: #bbbbbb;
+  --error: #e53935;
 }
 
 body {
@@ -43,6 +44,10 @@ body.light-theme h1,
 body.light-theme h2,
 body.light-theme h3 {
   color: var(--darkOne);
+}
+
+body.light-theme {
+  --error: #c62828;
 }
 
 h1 {
@@ -289,7 +294,7 @@ body.light-theme .movie-info {
 }
 
 #yearError {
-  color: red;
+  color: var(--error);
   font-size: 0.85rem;
   display: none;
 }

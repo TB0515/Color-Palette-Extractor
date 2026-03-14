@@ -8,6 +8,14 @@ import path from "path";
 
 dotenv.config();
 
+const REQUIRED_ENV = ["TMDB_ACCESS_TOKEN", "OPENAI_API_KEY"];
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
 const PORT = process.env.PORT || 8000;
 
 const app = express();
@@ -19,10 +27,16 @@ const __dirname = dirname(__filename);
 
 app.use(express.static(path.join(__dirname, "./frontend")));
 
+const TMDB_OPTIONS = {
+  headers: {
+    accept: "application/json",
+    Authorization: `Bearer ${process.env.TMDB_ACCESS_TOKEN}`,
+  },
+};
+
 // TMDB movies proxy route
 app.get("/api/movies", async (req, res) => {
   const { genreID, startYear, endYear, page } = req.query;
-  const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
   const pageNumber = Math.max(parseInt(page) || 1, 1);
 
   const start = parseInt(startYear, 10);
@@ -36,7 +50,7 @@ app.get("/api/movies", async (req, res) => {
   ) {
     return res.status(400).json({ error: "Invalid year range" });
   }
-  if (!genreID || !/^\d+$/.test(genreID)) {
+  if (genreID !== "" && !/^\d+$/.test(genreID)) {
     return res.status(400).json({ error: "Invalid genreID" });
   }
 
@@ -44,14 +58,9 @@ app.get("/api/movies", async (req, res) => {
     const startDate = new Date(start, 0, 1).toISOString().slice(0, 10);
     const endDate = new Date(end, 11, 31).toISOString().slice(0, 10);
 
-    const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}&with_genres=${genreID}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
-    const options = {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`,
-      },
-    };
-    const response = await fetch(url, options);
+    const genreParam = genreID ? `&with_genres=${genreID}` : "";
+    const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}${genreParam}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
+    const response = await fetch(url, TMDB_OPTIONS);
     if (!response.ok) {
       return res
         .status(response.status)
@@ -72,17 +81,9 @@ app.get("/api/searchmovies", async (req, res) => {
     return res.status(400).json({ error: "Missing query" });
   }
 
-  const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
-
   const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
-  const options = {
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`,
-    },
-  };
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, TMDB_OPTIONS);
     if (!response.ok) {
       return res
         .status(response.status)
@@ -115,6 +116,10 @@ app.get("/proxy-image", async (req, res) => {
   try {
     const response = await fetch(imageUrl);
     res.set("Content-Type", response.headers.get("content-type"));
+    response.body.on("error", (err) => {
+      console.error("Error piping image stream:", err);
+      if (!res.headersSent) res.status(500).send("Failed to stream image");
+    });
     response.body.pipe(res);
   } catch (err) {
     console.error("Error fetching image:", err);
@@ -127,6 +132,11 @@ app.post("/api/extract-colors", async (req, res) => {
   const { imageBase64, theme } = req.body;
   if (!imageBase64 || !["dark", "light"].includes(theme)) {
     return res.status(400).json({ error: "Invalid request" });
+  }
+
+  // Reject payloads where decoded image would exceed 8 MB
+  if (imageBase64.length > 10_900_000) {
+    return res.status(413).json({ error: "Image too large (max 8 MB)" });
   }
 
   const openaiApiKey = process.env.OPENAI_API_KEY;

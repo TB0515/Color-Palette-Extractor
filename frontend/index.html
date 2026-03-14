@@ -82,8 +82,8 @@
 
     <div id="moviesContainer"></div>
     <div id="pageControls">
-      <button id="prevPage">Previous</button>
-      <button id="nextPage">Next</button>
+      <button id="prevPage" aria-label="Previous page">Previous</button>
+      <button id="nextPage" aria-label="Next page">Next</button>
     </div>
 
     <div id="posterSection">
@@ -95,7 +95,10 @@
         <button id="extractDarkColor">Generate Dark-Themed Palette</button>
         <button id="extractLightColor">Generate Light-Themed Palette</button>
         <div>
-          <p id="colorPalette">Color Palette: <span id="colorValues"></span></p>
+          <p id="colorPalette">
+            Color Palette:
+            <span id="colorValues" role="status" aria-live="polite"></span>
+          </p>
         </div>
       </div>
     </div>
