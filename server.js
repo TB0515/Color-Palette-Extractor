@@ -60,6 +60,7 @@ app.get("/api/movies", async (req, res) => {
     const data = await response.json();
     res.json(data.results ?? []);
   } catch (err) {
+    console.error("Error fetching movies:", err);
     res.status(500).json({ error: "Failed to fetch movies" });
   }
 });
@@ -90,6 +91,7 @@ app.get("/api/searchmovies", async (req, res) => {
     const data = await response.json();
     res.json(data.results ?? []);
   } catch (err) {
+    console.error("Error searching movies:", err);
     res.status(500).json({ error: "Failed to search movies" });
   }
 });
@@ -115,6 +117,7 @@ app.get("/proxy-image", async (req, res) => {
     res.set("Content-Type", response.headers.get("content-type"));
     response.body.pipe(res);
   } catch (err) {
+    console.error("Error fetching image:", err);
     res.status(500).send("Failed to fetch image");
   }
 });
@@ -204,6 +207,7 @@ app.post("/api/extract-colors", async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (err) {
+    console.error("Error extracting colors:", err);
     res.status(500).json({ error: "Failed to extract colors" });
   }
 });
