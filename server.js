@@ -25,9 +25,24 @@ app.get("/api/movies", async (req, res) => {
   const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
   const pageNumber = Math.max(parseInt(page) || 1, 1);
 
+  const start = parseInt(startYear, 10);
+  const end = parseInt(endYear, 10);
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    start < 1888 ||
+    end > 2100 ||
+    start > end
+  ) {
+    return res.status(400).json({ error: "Invalid year range" });
+  }
+  if (!genreID || !/^\d+$/.test(genreID)) {
+    return res.status(400).json({ error: "Invalid genreID" });
+  }
+
   try {
-    const startDate = new Date(startYear, 0, 1).toISOString().slice(0, 10);
-    const endDate = new Date(endYear, 11, 31).toISOString().slice(0, 10);
+    const startDate = new Date(start, 0, 1).toISOString().slice(0, 10);
+    const endDate = new Date(end, 11, 31).toISOString().slice(0, 10);
 
     const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}&with_genres=${genreID}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
     const options = {
@@ -52,6 +67,9 @@ app.get("/api/movies", async (req, res) => {
 // TMDB search movies proxy route
 app.get("/api/searchmovies", async (req, res) => {
   const { query } = req.query;
+  if (!query || !query.trim()) {
+    return res.status(400).json({ error: "Missing query" });
+  }
 
   const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
 
