@@ -12,11 +12,18 @@ window.addEventListener("load", function () {
   const btn = document.getElementById("extractDarkColor");
   const lightBtn = document.getElementById("extractLightColor");
   const yearError = document.getElementById("yearError");
+  const saveBtn = document.getElementById("savePaletteBtn");
+  const cachedBadge = document.getElementById("cachedBadge");
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebar = document.getElementById("savedSidebar");
+  const sidebarList = document.getElementById("sidebarList");
 
   const PLACEHOLDER_IMG = "./images/movie_poster_placeholder.png";
 
   let currentPage = 1;
   let searchMode = false;
+  let lastPalette = null;
+  let lastTheme = null;
 
   // Set dynamic year max and default values
   const currentYear = new Date().getFullYear();
@@ -74,8 +81,12 @@ window.addEventListener("load", function () {
         img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
         img.alt = movie.title;
         img.dataset.tmdbUrl = tmdbUrl;
+        img.dataset.movieId = movie.id;
+        img.dataset.movieTitle = movie.title;
         img.classList.remove("hidden");
         document.getElementById("posterPlaceholder").style.display = "none";
+        saveBtn.hidden = true;
+        cachedBadge.hidden = true;
       });
 
       const movieImg = document.createElement("img");
@@ -227,7 +238,12 @@ window.addEventListener("load", function () {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageBase64: base64Image, theme: "dark" }),
+        body: JSON.stringify({
+          imageBase64: base64Image,
+          theme: "dark",
+          movieId: img.dataset.movieId,
+          movieTitle: img.dataset.movieTitle,
+        }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -237,11 +253,21 @@ window.addEventListener("load", function () {
       }
       const data = await response.json();
       let palette;
-      try {
-        palette = JSON.parse(data.choices[0].message.content);
-      } catch {
-        throw new Error("Received invalid color data from API");
+      if (data.cached) {
+        palette = data.palette;
+        cachedBadge.hidden = false;
+        saveBtn.hidden = true;
+      } else {
+        try {
+          palette = JSON.parse(data.choices[0].message.content);
+        } catch {
+          throw new Error("Received invalid color data from API");
+        }
+        cachedBadge.hidden = true;
+        saveBtn.hidden = false;
       }
+      lastPalette = palette;
+      lastTheme = "dark";
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
@@ -281,7 +307,12 @@ window.addEventListener("load", function () {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageBase64: base64Image, theme: "light" }),
+        body: JSON.stringify({
+          imageBase64: base64Image,
+          theme: "light",
+          movieId: img.dataset.movieId,
+          movieTitle: img.dataset.movieTitle,
+        }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -291,11 +322,21 @@ window.addEventListener("load", function () {
       }
       const data = await response.json();
       let palette;
-      try {
-        palette = JSON.parse(data.choices[0].message.content);
-      } catch {
-        throw new Error("Received invalid color data from API");
+      if (data.cached) {
+        palette = data.palette;
+        cachedBadge.hidden = false;
+        saveBtn.hidden = true;
+      } else {
+        try {
+          palette = JSON.parse(data.choices[0].message.content);
+        } catch {
+          throw new Error("Received invalid color data from API");
+        }
+        cachedBadge.hidden = true;
+        saveBtn.hidden = false;
       }
+      lastPalette = palette;
+      lastTheme = "light";
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
@@ -320,5 +361,100 @@ window.addEventListener("load", function () {
     }
     document.getElementById("colorValues").textContent = "Extracting colors...";
     extractLightColors();
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    if (!lastPalette || !lastTheme) return;
+    saveBtn.disabled = true;
+    try {
+      const response = await fetch("/api/palettes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movieId: img.dataset.movieId,
+          movieTitle: img.dataset.movieTitle,
+          theme: lastTheme,
+          palette: lastPalette,
+        }),
+      });
+      if (!response.ok) throw new Error("Save failed");
+      saveBtn.hidden = true;
+      cachedBadge.hidden = false;
+      if (!sidebar.hidden) await loadSavedPalettes();
+    } catch (err) {
+      console.error("Error saving palette:", err);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  async function loadSavedPalettes() {
+    try {
+      const res = await fetch("/api/palettes");
+      if (!res.ok) throw new Error("Failed to load palettes");
+      renderSidebar(await res.json());
+    } catch (err) {
+      console.error("Error loading palettes:", err);
+    }
+  }
+
+  function renderSidebar(palettes) {
+    sidebarList.replaceChildren();
+    const fragment = document.createDocumentFragment();
+    palettes.forEach((p) => {
+      const item = document.createElement("div");
+      item.classList.add("sidebar-palette-card");
+
+      const titleEl = document.createElement("span");
+      titleEl.classList.add("sidebar-movie-title");
+      titleEl.textContent = p.movieTitle;
+
+      const themeBadge = document.createElement("span");
+      themeBadge.classList.add("sidebar-theme-badge", `theme-${p.theme}`);
+      themeBadge.textContent = p.theme;
+
+      const swatches = document.createElement("div");
+      swatches.classList.add("sidebar-swatches");
+      ["background", "button", "darkOne", "lightOne"].forEach((key) => {
+        const swatch = document.createElement("span");
+        swatch.classList.add("sidebar-swatch");
+        swatch.style.backgroundColor = p.palette[key];
+        swatch.title = `${key}: ${p.palette[key]}`;
+        swatches.appendChild(swatch);
+      });
+
+      const dateEl = document.createElement("span");
+      dateEl.classList.add("sidebar-date");
+      dateEl.textContent = new Date(p.savedAt).toLocaleDateString();
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.classList.add("sidebar-delete-btn");
+      deleteBtn.setAttribute("aria-label", `Delete ${p.movieTitle} palette`);
+      deleteBtn.textContent = "×";
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        try {
+          const res = await fetch(`/api/palettes/${p._id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Delete failed");
+          item.remove();
+        } catch (err) {
+          console.error("Error deleting palette:", err);
+        }
+      });
+
+      item.addEventListener("click", () =>
+        applyPaletteToTheme(p.palette, p.theme),
+      );
+      item.append(titleEl, themeBadge, swatches, dateEl, deleteBtn);
+      fragment.appendChild(item);
+    });
+    sidebarList.appendChild(fragment);
+  }
+
+  sidebarToggle.addEventListener("click", async () => {
+    sidebar.hidden = !sidebar.hidden;
+    if (!sidebar.hidden) await loadSavedPalettes();
   });
 });
