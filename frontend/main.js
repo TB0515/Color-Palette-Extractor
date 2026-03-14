@@ -74,6 +74,8 @@ window.addEventListener("load", function () {
         img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
         img.alt = movie.title;
         img.dataset.tmdbUrl = tmdbUrl;
+        img.classList.remove("hidden");
+        document.getElementById("posterPlaceholder").style.display = "none";
       });
 
       const movieImg = document.createElement("img");
