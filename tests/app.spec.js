@@ -6,6 +6,17 @@ const mockMovies = Array.from({ length: 20 }, (_, i) => ({
   poster_path: `/test${i + 1}.jpg`,
 }));
 
+const mockMoviesWithNullPosters = [
+  ...mockMovies,
+  {
+    id: 101,
+    title: "Backdrop Only",
+    poster_path: null,
+    backdrop_path: "/bd1.jpg",
+  },
+  { id: 102, title: "No Image", poster_path: null, backdrop_path: null },
+];
+
 const mockFewMovies = mockMovies.slice(0, 5);
 
 const mockPalette = {
@@ -267,4 +278,43 @@ test("sidebar toggle button closes the sidebar", async ({ page }) => {
   await expect(page.locator("#savedSidebar")).toBeVisible();
   await page.locator("#sidebarToggle").click();
   await expect(page.locator("#savedSidebar")).toBeHidden();
+});
+
+test("clicking no-poster movie with backdrop proxies backdrop URL", async ({
+  page,
+}) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: mockMoviesWithNullPosters }),
+  );
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard", { hasText: "Backdrop Only" }).click();
+  const src = await page.locator("#moviePoster").getAttribute("src");
+  expect(src).toContain("/proxy-image");
+});
+
+test("clicking no-image movie shows no-poster placeholder text", async ({
+  page,
+}) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: mockMoviesWithNullPosters }),
+  );
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard", { hasText: "No Image" }).click();
+  await expect(page.locator("#posterPlaceholder")).toContainText(
+    "Select a different movie",
+  );
+});
+
+test("extract shows poster-required message when no-image movie selected", async ({
+  page,
+}) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: mockMoviesWithNullPosters }),
+  );
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard", { hasText: "No Image" }).click();
+  await page.locator("#extractDarkColor").click();
+  await expect(page.locator("#colorValues")).toContainText(
+    "Please select a movie poster first.",
+  );
 });
