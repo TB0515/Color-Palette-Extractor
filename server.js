@@ -40,13 +40,6 @@ const PORT = process.env.PORT || 8000;
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 app.use(cors());
-app.use((_req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.themoviedb.org; connect-src 'self'; script-src 'self'; font-src 'self';",
-  );
-  next();
-});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -140,7 +133,7 @@ app.get("/proxy-image", async (req, res) => {
     return res.status(400).send("Invalid image URL");
   }
   try {
-    const response = await fetch(parsedUrl.href);
+    const response = await fetch(imageUrl);
     res.set("Content-Type", response.headers.get("content-type"));
     response.body.on("error", (err) => {
       console.error("Error piping image stream:", err);
@@ -166,7 +159,7 @@ app.post("/api/extract-colors", async (req, res) => {
   }
 
   // Cache lookup — only for saved palettes (skipped if DB not ready)
-  if (db && movieId) {
+  if (db && movieId && ["dark", "light"].includes(theme)) {
     const cached = await db
       .collection("palettes")
       .findOne({ movieId: Number(movieId), theme });
@@ -182,8 +175,8 @@ app.post("/api/extract-colors", async (req, res) => {
   const openaiApiKey = process.env.OPENAI_API_KEY;
   const systemPrompt =
     theme === "dark"
-      ? "You are a color extraction assistant. Return seven hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster.  Always choose a dark color for the background. Ensure all other colors provide good, accessible contrast on the dark background from the poster composition."
-      : "You are a color extraction assistant. Return seven hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition.";
+      ? "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster.  Always choose a dark color for the background. Ensure all other colors provide good, accessible contrast on the dark background from the poster composition."
+      : "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition.";
 
   const outputStructure = {
     name: "poster_palette_schema",
@@ -286,27 +279,14 @@ app.get("/api/palettes", async (_req, res) => {
 
 app.post("/api/palettes", async (req, res) => {
   const { movieId, movieTitle, theme, palette } = req.body;
-  const PALETTE_KEYS = [
-    "background",
-    "hover",
-    "button",
-    "darkOne",
-    "darkTwo",
-    "lightOne",
-    "lightTwo",
-  ];
   if (
     !movieId ||
     !movieTitle ||
     !["dark", "light"].includes(theme) ||
     !palette ||
-    typeof palette !== "object" ||
-    !PALETTE_KEYS.every((k) => k in palette)
+    typeof palette !== "object"
   ) {
     return res.status(400).json({ error: "Invalid request" });
-  }
-  if (String(movieTitle).length > 500) {
-    return res.status(400).json({ error: "movieTitle too long" });
   }
   if (!db) return res.status(503).json({ error: "Database not ready" });
   try {
