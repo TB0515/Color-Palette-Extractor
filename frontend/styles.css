@@ -121,6 +121,11 @@ input[type="number"]:focus {
   outline: none;
 }
 
+input[type="number"]:focus-visible {
+  outline: 2px solid var(--button);
+  outline-offset: 2px;
+}
+
 .genreFilter {
   display: flex;
   align-items: center;
@@ -147,6 +152,11 @@ body.light-theme #genre {
 #genre:focus {
   border-color: var(--button);
   outline: none;
+}
+
+#genre:focus-visible {
+  outline: 2px solid var(--button);
+  outline-offset: 2px;
 }
 
 .search-bar {
@@ -196,6 +206,22 @@ button:active {
   transform: translateY(0);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button:disabled:hover {
+  background-color: var(--button);
+  transform: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--hover);
+  outline-offset: 3px;
+}
+
 #moviesContainer {
   display: flex;
   justify-content: center;
@@ -224,6 +250,7 @@ button:active {
   align-items: center;
   color: var(--lightTwo);
   border: 2px solid transparent;
+  overflow: hidden;
 }
 
 body.light-theme .movieCard {
@@ -296,7 +323,6 @@ body.light-theme .movie-info {
 #moviePoster:hover {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
 }
-
 
 #colorButtons {
   display: flex;
