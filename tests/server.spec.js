@@ -154,3 +154,58 @@ test("DELETE /api/palettes/:id returns 404 or 503 for non-existent id", async ({
   const res = await request.delete("/api/palettes/000000000000000000000000");
   expect([404, 503]).toContain(res.status());
 });
+
+test("GET /api/movies returns array for valid params", async ({ request }) => {
+  const res = await request.get(
+    "/api/movies?genreID=28&startYear=2020&endYear=2023",
+  );
+  if (res.status() === 200) {
+    const data = await res.json();
+    expect(Array.isArray(data)).toBe(true);
+  } else {
+    expect([500, 503]).toContain(res.status()); // TMDB unavailable in CI
+  }
+});
+
+test("GET /api/searchmovies returns array for valid query", async ({
+  request,
+}) => {
+  const res = await request.get("/api/searchmovies?query=inception");
+  if (res.status() === 200) {
+    const data = await res.json();
+    expect(Array.isArray(data)).toBe(true);
+  } else {
+    expect([500, 503]).toContain(res.status());
+  }
+});
+
+test("POST /api/palettes saves then DELETE removes palette", async ({
+  request,
+}) => {
+  const palette = {
+    background: "#111",
+    hover: "#222",
+    button: "#333",
+    darkOne: "#444",
+    darkTwo: "#555",
+    lightOne: "#eee",
+    lightTwo: "#fff",
+  };
+  const postRes = await request.post("/api/palettes", {
+    data: { movieId: 99999, movieTitle: "Test Movie", theme: "dark", palette },
+  });
+  if (postRes.status() === 201) {
+    const saved = await postRes.json();
+    const delRes = await request.delete(`/api/palettes/${saved._id}`);
+    expect([200, 204]).toContain(delRes.status());
+  } else {
+    expect([503]).toContain(postRes.status()); // DB unavailable in CI
+  }
+});
+
+test("extract-colors rejects oversized payload", async ({ request }) => {
+  const res = await request.post("/api/extract-colors", {
+    data: { imageBase64: "a".repeat(10_900_001), theme: "dark" },
+  });
+  expect(res.status()).toBe(413);
+});
