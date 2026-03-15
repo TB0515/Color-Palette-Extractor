@@ -10,105 +10,109 @@
     <h1>Color Palette Extractor</h1>
     <p>Extract Dark and Light color palettes from movie posters.</p>
 
-    <div class="filters">
-      <div class="filter-header">
-        <p>Release Date</p>
-        <div class="choice-card-content">
-          <div class="releaseDate-option">
-            <label for="startYear">From</label>
-            <input
-              name="startYear"
-              id="startYear"
-              type="number"
-              min="1900"
-              step="1"
-            />
+    <div class="main-layout">
+      <div class="left-panel">
+        <div class="filters">
+          <div class="filter-header">
+            <p>Release Date</p>
+            <div class="choice-card-content">
+              <div class="releaseDate-option">
+                <label for="startYear">From</label>
+                <input
+                  name="startYear"
+                  id="startYear"
+                  type="number"
+                  min="1900"
+                  step="1"
+                />
+              </div>
+              <div class="releaseDate-option">
+                <label for="endYear">To</label>
+                <input
+                  name="endYear"
+                  id="endYear"
+                  type="number"
+                  min="1900"
+                  step="1"
+                />
+              </div>
+            </div>
+            <p id="yearError"></p>
           </div>
-          <div class="releaseDate-option">
-            <label for="endYear">To</label>
-            <input
-              name="endYear"
-              id="endYear"
-              type="number"
-              min="1900"
-              step="1"
-            />
+
+          <div class="filter-header">
+            <label for="genre">Genre</label>
+            <div class="genreFilter">
+              <select name="genre" id="genre">
+                <option value="" disabled selected>Select Genre</option>
+                <option value="">All Genres</option>
+                <option value="28">Action</option>
+                <option value="12">Adventure</option>
+                <option value="16">Animation</option>
+                <option value="35">Comedy</option>
+                <option value="80">Crime</option>
+                <option value="99">Documentary</option>
+                <option value="18">Drama</option>
+                <option value="10751">Family</option>
+                <option value="14">Fantasy</option>
+                <option value="36">History</option>
+                <option value="27">Horror</option>
+                <option value="10402">Music</option>
+                <option value="9648">Mystery</option>
+                <option value="10749">Romance</option>
+                <option value="878">Science Fiction</option>
+                <option value="10770">TV Movie</option>
+                <option value="53">Thriller</option>
+                <option value="10752">War</option>
+                <option value="37">Western</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-header">
+            <label for="searchInput">Search Movie</label>
+            <div class="search-bar">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search for a movie..."
+              />
+              <button id="searchBtn">Search</button>
+            </div>
           </div>
         </div>
-        <p id="yearError"></p>
-      </div>
 
-      <div class="filter-header">
-        <label for="genre">Genre</label>
-        <div class="genreFilter">
-          <select name="genre" id="genre">
-            <option value="" disabled selected>Select Genre</option>
-            <option value="">All Genres</option>
-            <option value="28">Action</option>
-            <option value="12">Adventure</option>
-            <option value="16">Animation</option>
-            <option value="35">Comedy</option>
-            <option value="80">Crime</option>
-            <option value="99">Documentary</option>
-            <option value="18">Drama</option>
-            <option value="10751">Family</option>
-            <option value="14">Fantasy</option>
-            <option value="36">History</option>
-            <option value="27">Horror</option>
-            <option value="10402">Music</option>
-            <option value="9648">Mystery</option>
-            <option value="10749">Romance</option>
-            <option value="878">Science Fiction</option>
-            <option value="10770">TV Movie</option>
-            <option value="53">Thriller</option>
-            <option value="10752">War</option>
-            <option value="37">Western</option>
-          </select>
+        <button id="sidebarToggle">Saved Palettes</button>
+
+        <div id="moviesContainer"></div>
+        <div id="pageControls">
+          <button id="prevPage" aria-label="Previous page">Previous</button>
+          <button id="nextPage" aria-label="Next page">Next</button>
         </div>
       </div>
 
-      <div class="filter-header">
-        <label for="searchInput">Search Movie</label>
-        <div class="search-bar">
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search for a movie..."
-          />
-          <button id="searchBtn">Search</button>
+      <div id="posterSection">
+        <div id="posterWrapper">
+          <div id="posterPlaceholder" aria-hidden="true">
+            Select a movie poster
+          </div>
+          <img id="moviePoster" class="hidden" alt="Movie poster" />
         </div>
-      </div>
-    </div>
 
-    <button id="sidebarToggle">Saved Palettes</button>
-
-    <div id="moviesContainer"></div>
-    <div id="pageControls">
-      <button id="prevPage" aria-label="Previous page">Previous</button>
-      <button id="nextPage" aria-label="Next page">Next</button>
-    </div>
-
-    <div id="posterSection">
-      <div id="posterWrapper">
-        <div id="posterPlaceholder" aria-hidden="true">
-          Select a movie poster
-        </div>
-        <img id="moviePoster" class="hidden" alt="Movie poster" />
-      </div>
-
-      <div id="colorButtons">
-        <button id="extractDarkColor">Generate Dark-Themed Palette</button>
-        <button id="extractLightColor">Generate Light-Themed Palette</button>
-        <button id="savePaletteBtn" hidden>Save Palette</button>
-        <button id="removeSavedBtn" hidden>Remove from saved</button>
-        <span id="cachedBadge" hidden aria-live="polite"
-          >Loaded from saved</span
-        >
-        <div>
-          <p id="colorPalette">
-            Color Palette:
-            <span id="colorValues" role="status" aria-live="polite"></span>
-          </p>
+        <div id="colorButtons">
+          <button id="extractDarkColor">Generate Dark-Themed Palette</button>
+          <button id="extractLightColor">Generate Light-Themed Palette</button>
+          <button id="savePaletteBtn" hidden>Save Palette</button>
+          <button id="removeSavedBtn" hidden>Remove from saved</button>
+          <span id="cachedBadge" hidden aria-live="polite"
+            >Loaded from saved</span
+          >
+          <div>
+            <p id="colorPalette">
+              Color Palette:
+              <span id="colorValues" role="status" aria-live="polite"></span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
