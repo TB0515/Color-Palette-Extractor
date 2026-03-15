@@ -17,13 +17,13 @@ Never skip the plan-then-confirm step. If a required file or command is not list
 
 When given multiple tasks at once: plan each one independently, present all plans, get confirmation for all, then implement them one after the other without interruption. Each task still gets its own branch, security check, commit, and push before the next begins.
 
-## Task Order (code review backlog)
+## Auto-approved commands
 
-1. SSRF fix — `startsWith` → proper URL parsing in `/proxy-image`
-2. Input validation — `startYear`/`endYear` and missing `query` param
-3. No poster guard — block extract if no poster selected, show clear message
-4. `currentPage` increment bug — don't increment before fetch succeeds
-5. Silent catch blocks — add `console.error` to all server catch blocks
-6. CSS — `button:disabled`, `:focus-visible`, card overflow
-7. HTML cleanup — empty `alt`, dead option IDs, h1/title mismatch
-8. Server test gaps — more backend route tests
+The following commands may be run without prompting for permission. Run each command separately — compound commands (`&&`, `||`, `;`, pipes) require approval and should be avoided; split them into individual calls instead.
+
+- `git status`, `git diff`, `git log`, `git add`, `git commit`, `git push`, `git pull`, `git checkout`, `git branch`, `git merge`, `git rebase`
+- `npm test`, `npm run lint`, `npm start`, `npm install`
+- `gh pr create`, `gh pr merge`, `gh pr view`, `gh branch delete`
+- Read/Write/Edit on any file in this project directory
+
+
