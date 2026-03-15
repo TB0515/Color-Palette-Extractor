@@ -259,9 +259,23 @@ window.addEventListener("load", function () {
 
   // Getting the color palette
 
-  async function extractDarkColors() {
+  async function extractColors(theme) {
     btn.disabled = true;
     lightBtn.disabled = true;
+    const messages = [
+      "Extracting colors...",
+      "Consulting the color spirits...",
+      "Teaching AI about aesthetics...",
+      "Checking contrast ratios...",
+      "Negotiating with the palette...",
+      "Making it accessible...",
+      "Almost there...",
+    ];
+    let msgIndex = 0;
+    const loadingTimer = setInterval(() => {
+      document.getElementById("colorValues").textContent =
+        messages[++msgIndex % messages.length];
+    }, 2500);
     try {
       const base64Image = await getBase64FromImageUrl(img.dataset.tmdbUrl);
       if (!base64Image) {
@@ -274,7 +288,7 @@ window.addEventListener("load", function () {
         },
         body: JSON.stringify({
           imageBase64: base64Image,
-          theme: "dark",
+          theme,
           movieId: img.dataset.movieId,
           movieTitle: img.dataset.movieTitle,
         }),
@@ -305,18 +319,19 @@ window.addEventListener("load", function () {
         removeSavedBtn.hidden = true;
       }
       lastPalette = palette;
-      lastTheme = "dark";
+      lastTheme = theme;
       document.getElementById("colorValues").textContent = JSON.stringify(
         palette,
         null,
         2,
       );
-      applyPaletteToTheme(palette, "dark");
+      applyPaletteToTheme(palette, theme);
     } catch (err) {
       console.error("Error extracting colors:", err);
       document.getElementById("colorValues").textContent =
         "Failed to extract colors. Please try again.";
     } finally {
+      clearInterval(loadingTimer);
       btn.disabled = false;
       lightBtn.disabled = false;
     }
@@ -329,71 +344,8 @@ window.addEventListener("load", function () {
       return;
     }
     document.getElementById("colorValues").textContent = "Extracting colors...";
-    extractDarkColors();
+    extractColors("dark");
   });
-
-  async function extractLightColors() {
-    btn.disabled = true;
-    lightBtn.disabled = true;
-    try {
-      const base64Image = await getBase64FromImageUrl(img.dataset.tmdbUrl);
-      if (!base64Image) {
-        throw new Error("Base64 image data is empty");
-      }
-      const response = await fetch("/api/extract-colors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          imageBase64: base64Image,
-          theme: "light",
-          movieId: img.dataset.movieId,
-          movieTitle: img.dataset.movieTitle,
-        }),
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(
-          `API error: ${response.status} ${err.error?.message || ""}`,
-        );
-      }
-      const data = await response.json();
-      let palette;
-      if (data.cached) {
-        palette = data.palette;
-        lastSavedId = data.id;
-        cachedBadge.hidden = false;
-        saveBtn.hidden = true;
-        removeSavedBtn.hidden = false;
-      } else {
-        try {
-          palette = JSON.parse(data.choices[0].message.content);
-        } catch {
-          throw new Error("Received invalid color data from API");
-        }
-        lastSavedId = null;
-        cachedBadge.hidden = true;
-        saveBtn.hidden = false;
-        removeSavedBtn.hidden = true;
-      }
-      lastPalette = palette;
-      lastTheme = "light";
-      document.getElementById("colorValues").textContent = JSON.stringify(
-        palette,
-        null,
-        2,
-      );
-      applyPaletteToTheme(palette, "light");
-    } catch (err) {
-      console.error("Error extracting colors:", err);
-      document.getElementById("colorValues").textContent =
-        "Failed to extract colors. Please try again.";
-    } finally {
-      btn.disabled = false;
-      lightBtn.disabled = false;
-    }
-  }
 
   lightBtn.addEventListener("click", () => {
     if (!img.dataset.tmdbUrl) {
@@ -402,7 +354,7 @@ window.addEventListener("load", function () {
       return;
     }
     document.getElementById("colorValues").textContent = "Extracting colors...";
-    extractLightColors();
+    extractColors("light");
   });
 
   saveBtn.addEventListener("click", async () => {
