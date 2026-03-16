@@ -60,7 +60,8 @@ window.addEventListener("load", function () {
       const data = await response.json();
       const movies = Array.isArray(data) ? data : (data.results ?? []);
       if (!Array.isArray(data)) totalPages = data.totalPages ?? 1;
-      nextPageBtn.disabled = currentPage >= totalPages;
+      nextPageBtn.disabled = page >= totalPages;
+      prevPageBtn.disabled = page <= 1;
       if (movies.length === 0) {
         pageControls.style.display = "none";
       } else {
