@@ -669,3 +669,35 @@ body.light-theme #cachedBadge {
 body:has(#savedSidebar:not([hidden])) {
   padding-right: 320px;
 }
+
+/* Firefox scrollbar styling */
+#moviesContainer {
+  scrollbar-width: thin;
+  scrollbar-color: var(--darkTwo) transparent;
+}
+
+/* Sidebar entrance animation */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+#savedSidebar:not([hidden]) {
+  animation: slideInFromRight 0.22s ease;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
