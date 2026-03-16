@@ -19,6 +19,12 @@ for (const key of REQUIRED_ENV) {
   }
 }
 
+if (!process.env.ALLOWED_ORIGINS) {
+  console.warn(
+    "Warning: ALLOWED_ORIGINS not set — defaulting to http://localhost:8000. Set this in production.",
+  );
+}
+
 const mongoClient = new MongoClient(process.env.MONGODB_URI, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -53,11 +59,38 @@ app.use(
         : cb(new Error("Not allowed")),
   }),
 );
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", "https://media.themoviedb.org", "data:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+      },
+    },
+  }),
+);
 
 const extractColorsLimiter = rateLimit({
   windowMs: 60_000,
   max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const apiLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const proxyImageLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 120,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -83,7 +116,7 @@ const TMDB_OPTIONS = {
 };
 
 // TMDB movies proxy route
-app.get("/api/movies", async (req, res) => {
+app.get("/api/movies", apiLimiter, async (req, res) => {
   const { genreID, startYear, endYear, page } = req.query;
   const pageNumber = Math.max(parseInt(page) || 1, 1);
 
@@ -126,7 +159,7 @@ app.get("/api/movies", async (req, res) => {
 });
 
 // TMDB search movies proxy route
-app.get("/api/searchmovies", async (req, res) => {
+app.get("/api/searchmovies", apiLimiter, async (req, res) => {
   const { query } = req.query;
   if (!query || !query.trim()) {
     return res.status(400).json({ error: "Missing query" });
@@ -150,7 +183,7 @@ app.get("/api/searchmovies", async (req, res) => {
 
 // Image proxy route to avoid CORS issues
 
-app.get("/proxy-image", async (req, res) => {
+app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
   const imageUrl = req.query.url;
   let parsedUrl;
   try {
@@ -166,6 +199,13 @@ app.get("/proxy-image", async (req, res) => {
   }
   try {
     const response = await fetchWithTimeout(imageUrl, {}, 20_000);
+    const contentLength = parseInt(
+      response.headers.get("content-length") || "0",
+      10,
+    );
+    if (contentLength > 10_000_000) {
+      return res.status(413).json({ error: "Image too large" });
+    }
     res.set("Content-Type", response.headers.get("content-type"));
     response.body.on("error", (err) => {
       console.error("Error piping image stream:", err);
@@ -423,10 +463,16 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
   }
 
   // Cache lookup — only for saved palettes (skipped if DB not ready)
-  if (db && movieId && ["dark", "light"].includes(theme)) {
+  const numericMovieId = Number(movieId);
+  if (
+    db &&
+    movieId &&
+    !Number.isNaN(numericMovieId) &&
+    ["dark", "light"].includes(theme)
+  ) {
     const cached = await db
       .collection("palettes")
-      .findOne({ movieId: Number(movieId), theme });
+      .findOne({ movieId: numericMovieId, theme });
     if (cached) {
       return res.json({
         cached: true,
@@ -517,7 +563,7 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
 });
 
 // Saved palettes routes
-app.get("/api/palettes", async (_req, res) => {
+app.get("/api/palettes", apiLimiter, async (_req, res) => {
   if (!db) return res.status(503).json({ error: "Database not ready" });
   try {
     const palettes = await db
@@ -543,9 +589,10 @@ const PALETTE_KEYS = [
   "lightOne",
   "lightTwo",
 ];
-const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+const HEX_RE =
+  /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-app.post("/api/palettes", async (req, res) => {
+app.post("/api/palettes", apiLimiter, async (req, res) => {
   const { movieId, movieTitle, theme, palette } = req.body;
   if (
     !movieId ||
@@ -567,10 +614,14 @@ app.post("/api/palettes", async (req, res) => {
   const cleanPalette = Object.fromEntries(
     PALETTE_KEYS.map((k) => [k, palette[k]]),
   );
+  const numericMovieId = Number(movieId);
+  if (!movieId || Number.isNaN(numericMovieId)) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
   if (!db) return res.status(503).json({ error: "Database not ready" });
   try {
     const doc = {
-      movieId: Number(movieId),
+      movieId: numericMovieId,
       movieTitle: titleStr,
       theme,
       palette: cleanPalette,
@@ -589,7 +640,7 @@ app.post("/api/palettes", async (req, res) => {
   }
 });
 
-app.delete("/api/palettes/:id", async (req, res) => {
+app.delete("/api/palettes/:id", apiLimiter, async (req, res) => {
   let objectId;
   try {
     objectId = new ObjectId(req.params.id);
@@ -617,6 +668,16 @@ connectDB().catch((err) => {
   console.error("Failed to connect to MongoDB:", err);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Image proxy server running at http://localhost:${PORT}`);
 });
+
+async function shutdown() {
+  server.close(async () => {
+    await mongoClient.close();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000);
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
