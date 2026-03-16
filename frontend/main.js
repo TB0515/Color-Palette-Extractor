@@ -14,7 +14,6 @@ window.addEventListener("load", function () {
   const yearError = document.getElementById("yearError");
   const saveBtn = document.getElementById("savePaletteBtn");
   const removeSavedBtn = document.getElementById("removeSavedBtn");
-  const cachedBadge = document.getElementById("cachedBadge");
   const sidebarToggle = document.getElementById("sidebarToggle");
   const sidebar = document.getElementById("savedSidebar");
   const sidebarList = document.getElementById("sidebarList");
@@ -91,6 +90,7 @@ window.addEventListener("load", function () {
           img.classList.remove("hidden");
           posterPlaceholder.textContent = "Select a movie poster";
           posterPlaceholder.style.display = "none";
+          posterPlaceholder.setAttribute("aria-hidden", "true");
         } else if (movie.backdrop_path) {
           const tmdbUrl = `https://media.themoviedb.org/t/p/w780${movie.backdrop_path}`;
           img.src = `/proxy-image?url=${encodeURIComponent(tmdbUrl)}`;
@@ -100,16 +100,17 @@ window.addEventListener("load", function () {
           img.dataset.movieTitle = movie.title;
           img.classList.remove("hidden");
           posterPlaceholder.style.display = "none";
+          posterPlaceholder.setAttribute("aria-hidden", "true");
         } else {
           img.classList.add("hidden");
           img.dataset.tmdbUrl = "";
           posterPlaceholder.textContent =
             "Select a different movie, this one doesn't have a poster or image to generate colours from.";
           posterPlaceholder.style.display = "";
+          posterPlaceholder.removeAttribute("aria-hidden");
         }
         saveBtn.hidden = true;
         removeSavedBtn.hidden = true;
-        cachedBadge.hidden = true;
         lastSavedId = null;
       });
 
@@ -304,7 +305,6 @@ window.addEventListener("load", function () {
       if (data.cached) {
         palette = data.palette;
         lastSavedId = data.id;
-        cachedBadge.hidden = false;
         saveBtn.hidden = true;
         removeSavedBtn.hidden = false;
       } else {
@@ -314,7 +314,6 @@ window.addEventListener("load", function () {
           throw new Error("Received invalid color data from API");
         }
         lastSavedId = null;
-        cachedBadge.hidden = true;
         saveBtn.hidden = false;
         removeSavedBtn.hidden = true;
       }
@@ -376,7 +375,6 @@ window.addEventListener("load", function () {
       lastSavedId = saved._id;
       saveBtn.hidden = true;
       removeSavedBtn.hidden = false;
-      cachedBadge.hidden = false;
       if (!sidebar.hidden) await loadSavedPalettes();
     } catch (err) {
       console.error("Error saving palette:", err);
@@ -395,7 +393,6 @@ window.addEventListener("load", function () {
       if (!res.ok) throw new Error("Remove failed");
       lastSavedId = null;
       removeSavedBtn.hidden = true;
-      cachedBadge.hidden = true;
       saveBtn.hidden = false;
       if (!sidebar.hidden) await loadSavedPalettes();
     } catch (err) {
@@ -482,6 +479,21 @@ window.addEventListener("load", function () {
 
   sidebarToggle.addEventListener("click", async () => {
     sidebar.hidden = !sidebar.hidden;
+    sidebarToggle.setAttribute("aria-expanded", String(!sidebar.hidden));
     if (!sidebar.hidden) await loadSavedPalettes();
+  });
+
+  document.getElementById("sidebarClose").addEventListener("click", () => {
+    sidebar.hidden = true;
+    sidebarToggle.setAttribute("aria-expanded", "false");
+    sidebarToggle.focus();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !sidebar.hidden) {
+      sidebar.hidden = true;
+      sidebarToggle.setAttribute("aria-expanded", "false");
+      sidebarToggle.focus();
+    }
   });
 });

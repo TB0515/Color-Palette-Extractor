@@ -233,7 +233,7 @@ test("save palette button appears after successful extraction", async ({
   await expect(page.locator("#savePaletteBtn")).toBeVisible();
 });
 
-test("cached badge shown and save button hidden when extract-colors returns cached:true", async ({
+test("remove button visible and save button hidden when extract-colors returns cached:true", async ({
   page,
 }) => {
   await page.route("/api/extract-colors", (route) =>
@@ -242,6 +242,7 @@ test("cached badge shown and save button hidden when extract-colors returns cach
         cached: true,
         palette: {
           background: "#111",
+          surface: "#1a1a1a",
           hover: "#222",
           button: "#333",
           darkOne: "#444",
@@ -258,7 +259,7 @@ test("cached badge shown and save button hidden when extract-colors returns cach
     page.waitForResponse("/api/extract-colors"),
     page.locator("#extractDarkColor").click(),
   ]);
-  await expect(page.locator("#cachedBadge")).toBeVisible();
+  await expect(page.locator("#removeSavedBtn")).toBeVisible();
   await expect(page.locator("#savePaletteBtn")).toBeHidden();
 });
 
@@ -317,4 +318,57 @@ test("extract shows poster-required message when no-image movie selected", async
   await expect(page.locator("#colorValues")).toContainText(
     "Please select a movie poster first.",
   );
+});
+
+test("clicking no-image movie removes aria-hidden from posterPlaceholder", async ({
+  page,
+}) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: mockMoviesWithNullPosters }),
+  );
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard", { hasText: "No Image" }).click();
+  const ariaHidden = await page
+    .locator("#posterPlaceholder")
+    .getAttribute("aria-hidden");
+  expect(ariaHidden).toBeNull();
+});
+
+test("clicking poster movie sets aria-hidden on posterPlaceholder", async ({
+  page,
+}) => {
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard").first().click();
+  await expect(page.locator("#posterPlaceholder")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+});
+
+test("sidebarToggle aria-expanded updates on open/close", async ({ page }) => {
+  await page.route("/api/palettes*", (route) => route.fulfill({ json: [] }));
+  await expect(page.locator("#sidebarToggle")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#sidebarToggle")).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+});
+
+test("sidebar close button hides the sidebar", async ({ page }) => {
+  await page.route("/api/palettes*", (route) => route.fulfill({ json: [] }));
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#savedSidebar")).toBeVisible();
+  await page.locator("#sidebarClose").click();
+  await expect(page.locator("#savedSidebar")).toBeHidden();
+});
+
+test("Escape key closes the sidebar", async ({ page }) => {
+  await page.route("/api/palettes*", (route) => route.fulfill({ json: [] }));
+  await page.locator("#sidebarToggle").click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#savedSidebar")).toBeHidden();
 });

@@ -7,14 +7,15 @@
     <title>Color Palette Extractor</title>
   </head>
   <body>
+    <a href="#moviesContainer" class="skip-link">Skip to movies</a>
     <h1>Color Palette Extractor</h1>
     <p>Extract Dark and Light color palettes from movie posters.</p>
 
-    <div class="main-layout">
+    <main class="main-layout">
       <div class="left-panel">
         <div class="filters">
-          <div class="filter-header">
-            <p>Release Date</p>
+          <fieldset class="filter-header date-range-group">
+            <legend>Release Date</legend>
             <div class="choice-card-content">
               <div class="releaseDate-option">
                 <label for="startYear">From</label>
@@ -38,7 +39,7 @@
               </div>
             </div>
             <p id="yearError"></p>
-          </div>
+          </fieldset>
 
           <div class="filter-header">
             <label for="genre">Genre</label>
@@ -82,9 +83,13 @@
           </div>
         </div>
 
-        <button id="sidebarToggle">Saved Palettes</button>
+        <button id="sidebarToggle" aria-expanded="false">Saved Palettes</button>
 
-        <div id="moviesContainer"></div>
+        <div id="moviesContainer">
+          <p class="empty-state-msg">
+            Select a genre or search above to browse movies.
+          </p>
+        </div>
         <div id="pageControls">
           <button id="prevPage" aria-label="Previous page">Previous</button>
           <button id="nextPage" aria-label="Next page">Next</button>
@@ -93,9 +98,7 @@
 
       <div id="posterSection">
         <div id="posterWrapper">
-          <div id="posterPlaceholder" aria-hidden="true">
-            Select a movie poster
-          </div>
+          <div id="posterPlaceholder">Select a movie poster</div>
           <img id="moviePoster" class="hidden" alt="Movie poster" />
         </div>
 
@@ -104,9 +107,6 @@
           <button id="extractLightColor">Generate Light-Themed Palette</button>
           <button id="savePaletteBtn" hidden>Save Palette</button>
           <button id="removeSavedBtn" hidden>Remove from saved</button>
-          <span id="cachedBadge" hidden aria-live="polite"
-            >Loaded from saved</span
-          >
           <div>
             <p id="colorPalette">
               Color Palette:
@@ -115,9 +115,10 @@
           </div>
         </div>
       </div>
-    </div>
+    </main>
 
-    <aside id="savedSidebar" hidden>
+    <aside id="savedSidebar" aria-label="Saved palettes" hidden>
+      <button id="sidebarClose" aria-label="Close saved palettes">×</button>
       <h2>Saved Palettes</h2>
       <div id="sidebarList"></div>
     </aside>
