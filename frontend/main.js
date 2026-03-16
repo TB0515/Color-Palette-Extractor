@@ -242,8 +242,8 @@ window.addEventListener("load", function () {
       canvas.width = imgEl.naturalWidth || imgEl.width;
       canvas.height = imgEl.naturalHeight || imgEl.height;
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(imgEl, 0, 0);
       try {
+        ctx.drawImage(imgEl, 0, 0);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         if (!dataUrl.includes(","))
           return reject(new Error("Canvas export failed"));
