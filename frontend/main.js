@@ -19,10 +19,13 @@ window.addEventListener("load", function () {
   const sidebarList = document.getElementById("sidebarList");
 
   let currentPage = 1;
+  let totalPages = 1;
   let searchMode = false;
   let lastPalette = null;
   let lastTheme = null;
   let lastSavedId = null;
+
+  const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='140'%3E%3Crect width='90' height='140' rx='8' fill='%23444'/%3E%3Ctext x='45' y='75' text-anchor='middle' fill='%23888' font-size='10'%3ENo image%3C/text%3E%3C/svg%3E`;
 
   // Set dynamic year max and default values
   const currentYear = new Date().getFullYear();
@@ -47,13 +50,17 @@ window.addEventListener("load", function () {
 
   // Get Movie list
   async function fetchMovies(genreID, startYear, endYear, page) {
+    movieContainer.innerHTML = '<p class="loading-msg">Loading...</p>';
     try {
       const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Failed to fetch movies: ${response.status}`);
       }
-      const movies = await response.json();
+      const data = await response.json();
+      const movies = Array.isArray(data) ? data : (data.results ?? []);
+      if (!Array.isArray(data)) totalPages = data.totalPages ?? 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
       if (movies.length === 0) {
         pageControls.style.display = "none";
       } else {
@@ -119,10 +126,18 @@ window.addEventListener("load", function () {
         movieImgEl = document.createElement("img");
         movieImgEl.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
         movieImgEl.alt = movie.title;
+        movieImgEl.onerror = () => {
+          movieImgEl.src = PLACEHOLDER_SVG;
+          movieImgEl.onerror = null;
+        };
       } else if (movie.backdrop_path) {
         movieImgEl = document.createElement("img");
         movieImgEl.src = `https://media.themoviedb.org/t/p/w300${movie.backdrop_path}`;
         movieImgEl.alt = movie.title;
+        movieImgEl.onerror = () => {
+          movieImgEl.src = PLACEHOLDER_SVG;
+          movieImgEl.onerror = null;
+        };
       } else {
         movieImgEl = document.createElement("div");
         movieImgEl.classList.add("no-poster-text");
@@ -174,7 +189,7 @@ window.addEventListener("load", function () {
   }
 
   searchButton.addEventListener("click", async () => {
-    const query = searchInput.value.trim().toLowerCase();
+    const query = searchInput.value.trim();
     if (!query) return;
     await fetchSearchResults(query);
   });
@@ -220,37 +235,31 @@ window.addEventListener("load", function () {
     if (success) currentPage = nextPage;
   });
 
-  //convert url to file object and then file to base64 string
-
-  async function getBase64FromImageUrl(imageUrl) {
-    const proxyUrl = `/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
-    }
-    const blob = await response.blob();
+  // Read base64 from already-loaded img element via canvas
+  function getBase64FromImg(imgEl) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (!reader.result || !reader.result.includes(",")) {
-          reject(new Error("Unexpected data URL format"));
-          return;
-        }
-        const base64data = reader.result.split(",")[1];
-        resolve(base64data);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+      const canvas = document.createElement("canvas");
+      canvas.width = imgEl.naturalWidth || imgEl.width;
+      canvas.height = imgEl.naturalHeight || imgEl.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(imgEl, 0, 0);
+      try {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        if (!dataUrl.includes(","))
+          return reject(new Error("Canvas export failed"));
+        resolve(dataUrl.split(",")[1]);
+      } catch (e) {
+        reject(e);
+      }
     });
   }
 
   // Change the CSS root
-
   function applyPaletteToTheme(palette, theme) {
     const root = document.documentElement;
-    for (const key in palette) {
-      root.style.setProperty(`--${key}`, palette[key]);
-    }
+    Object.entries(palette).forEach(([key, val]) =>
+      root.style.setProperty(`--${key}`, val),
+    );
     if (theme === "light") {
       document.body.classList.add("light-theme");
     } else {
@@ -259,7 +268,6 @@ window.addEventListener("load", function () {
   }
 
   // Getting the color palette
-
   async function extractColors(theme) {
     btn.disabled = true;
     lightBtn.disabled = true;
@@ -272,13 +280,13 @@ window.addEventListener("load", function () {
       "Making it accessible...",
       "Almost there...",
     ];
-    let msgIndex = 0;
+    let msgIndex = -1;
     const loadingTimer = setInterval(() => {
       document.getElementById("colorValues").textContent =
         messages[++msgIndex % messages.length];
     }, 2500);
     try {
-      const base64Image = await getBase64FromImageUrl(img.dataset.tmdbUrl);
+      const base64Image = await getBase64FromImg(img);
       if (!base64Image) {
         throw new Error("Base64 image data is empty");
       }
@@ -319,12 +327,27 @@ window.addEventListener("load", function () {
       }
       lastPalette = palette;
       lastTheme = theme;
-      document.getElementById("colorValues").textContent = JSON.stringify(
-        palette,
-        null,
-        2,
-      );
       applyPaletteToTheme(palette, theme);
+
+      // Render color swatches
+      const colorValues = document.getElementById("colorValues");
+      colorValues.replaceChildren();
+      Object.entries(palette).forEach(([key, hex]) => {
+        const wrapper = document.createElement("span");
+        wrapper.classList.add("palette-swatch-wrapper");
+
+        const swatch = document.createElement("span");
+        swatch.classList.add("palette-swatch");
+        swatch.style.backgroundColor = hex;
+        swatch.title = `${key}: ${hex}`;
+
+        const label = document.createElement("span");
+        label.classList.add("palette-swatch-label");
+        label.textContent = hex;
+
+        wrapper.append(swatch, label);
+        colorValues.appendChild(wrapper);
+      });
     } catch (err) {
       console.error("Error extracting colors:", err);
       document.getElementById("colorValues").textContent =
@@ -433,6 +456,7 @@ window.addEventListener("load", function () {
       swatches.classList.add("sidebar-swatches");
       [
         "background",
+        "surface",
         "hover",
         "button",
         "darkOne",
@@ -463,6 +487,11 @@ window.addEventListener("load", function () {
           });
           if (!res.ok) throw new Error("Delete failed");
           item.remove();
+          if (String(p._id) === String(lastSavedId)) {
+            lastSavedId = null;
+            removeSavedBtn.hidden = true;
+            saveBtn.hidden = false;
+          }
         } catch (err) {
           console.error("Error deleting palette:", err);
         }

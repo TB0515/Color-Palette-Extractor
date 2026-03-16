@@ -155,15 +155,17 @@ test("DELETE /api/palettes/:id returns 404 or 503 for non-existent id", async ({
   expect([404, 503]).toContain(res.status());
 });
 
-test("GET /api/movies returns array for valid params", async ({ request }) => {
+test("GET /api/movies returns results array for valid params", async ({
+  request,
+}) => {
   const res = await request.get(
     "/api/movies?genreID=28&startYear=2020&endYear=2023",
   );
   if (res.status() === 200) {
     const data = await res.json();
-    expect(Array.isArray(data)).toBe(true);
+    expect(Array.isArray(data.results)).toBe(true);
   } else {
-    expect([500, 503]).toContain(res.status()); // TMDB unavailable in CI
+    expect([500, 502, 503, 504]).toContain(res.status()); // TMDB unavailable in CI
   }
 });
 

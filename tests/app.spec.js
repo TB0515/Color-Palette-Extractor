@@ -40,13 +40,18 @@ const mockPalette = {
 
 test.beforeEach(async ({ page }) => {
   await page.route("/api/movies*", (route) =>
-    route.fulfill({ json: mockMovies }),
+    route.fulfill({ json: { results: mockMovies, totalPages: 3 } }),
   );
   await page.route("/api/searchmovies*", (route) =>
     route.fulfill({ json: mockFewMovies }),
   );
+  // Minimal valid 1x1 PNG so canvas.drawImage() succeeds in getBase64FromImg
+  const VALID_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=",
+    "base64",
+  );
   await page.route("/proxy-image*", (route) =>
-    route.fulfill({ body: Buffer.alloc(100), contentType: "image/jpeg" }),
+    route.fulfill({ body: VALID_PNG, contentType: "image/png" }),
   );
   await page.route("/api/extract-colors", (route) =>
     route.fulfill({ json: mockPalette }),
@@ -196,7 +201,7 @@ test("next page does not advance currentPage on failed fetch", async ({
   let requestedPage;
   await page.route("/api/movies*", (route) => {
     requestedPage = new URL(route.request().url()).searchParams.get("page");
-    route.fulfill({ json: mockMovies });
+    route.fulfill({ json: { results: mockMovies, totalPages: 3 } });
   });
   await page.locator("#nextPage").click();
   expect(requestedPage).toBe("2");
@@ -285,7 +290,9 @@ test("clicking no-poster movie with backdrop proxies backdrop URL", async ({
   page,
 }) => {
   await page.route("/api/movies*", (route) =>
-    route.fulfill({ json: mockMoviesWithNullPosters }),
+    route.fulfill({
+      json: { results: mockMoviesWithNullPosters, totalPages: 1 },
+    }),
   );
   await page.selectOption("#genre", "28");
   await page.locator(".movieCard", { hasText: "Backdrop Only" }).click();
@@ -297,7 +304,9 @@ test("clicking no-image movie shows no-poster placeholder text", async ({
   page,
 }) => {
   await page.route("/api/movies*", (route) =>
-    route.fulfill({ json: mockMoviesWithNullPosters }),
+    route.fulfill({
+      json: { results: mockMoviesWithNullPosters, totalPages: 1 },
+    }),
   );
   await page.selectOption("#genre", "28");
   await page.locator(".movieCard", { hasText: "No Image" }).click();
@@ -310,7 +319,9 @@ test("extract shows poster-required message when no-image movie selected", async
   page,
 }) => {
   await page.route("/api/movies*", (route) =>
-    route.fulfill({ json: mockMoviesWithNullPosters }),
+    route.fulfill({
+      json: { results: mockMoviesWithNullPosters, totalPages: 1 },
+    }),
   );
   await page.selectOption("#genre", "28");
   await page.locator(".movieCard", { hasText: "No Image" }).click();
@@ -324,7 +335,9 @@ test("clicking no-image movie removes aria-hidden from posterPlaceholder", async
   page,
 }) => {
   await page.route("/api/movies*", (route) =>
-    route.fulfill({ json: mockMoviesWithNullPosters }),
+    route.fulfill({
+      json: { results: mockMoviesWithNullPosters, totalPages: 1 },
+    }),
   );
   await page.selectOption("#genre", "28");
   await page.locator(".movieCard", { hasText: "No Image" }).click();
@@ -371,4 +384,33 @@ test("Escape key closes the sidebar", async ({ page }) => {
   await page.locator("#sidebarToggle").click();
   await page.keyboard.press("Escape");
   await expect(page.locator("#savedSidebar")).toBeHidden();
+});
+
+test("next page button disabled when on last page", async ({ page }) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: { results: mockMovies, totalPages: 1 } }),
+  );
+  await page.selectOption("#genre", "28");
+  await expect(page.locator("#nextPage")).toBeDisabled();
+});
+
+test("palette extraction renders color swatches", async ({ page }) => {
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard").first().click();
+  await Promise.all([
+    page.waitForResponse("/api/extract-colors"),
+    page.locator("#extractDarkColor").click(),
+  ]);
+  const count = await page.locator(".palette-swatch").count();
+  expect(count).toBeGreaterThan(0);
+});
+
+test("broken thumbnail image falls back to SVG placeholder", async ({
+  page,
+}) => {
+  await page.selectOption("#genre", "28");
+  const firstImg = page.locator(".movieCard").first().locator("img");
+  await firstImg.evaluate((img) => img.dispatchEvent(new Event("error")));
+  const src = await firstImg.getAttribute("src");
+  expect(src).toContain("data:image/svg+xml");
 });
