@@ -380,6 +380,52 @@ body.light-theme .movie-info {
   padding: 1rem 0;
 }
 
+.loading-msg {
+  color: var(--lightTwo);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+body.light-theme .loading-msg {
+  color: var(--darkTwo);
+}
+
+#colorValues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.palette-swatch-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.palette-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: inline-block;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.palette-swatch-label {
+  font-size: 0.6rem;
+  color: var(--lightTwo);
+  font-family: monospace;
+}
+
+body.light-theme .palette-swatch-label {
+  color: var(--darkTwo);
+}
+
 #pageControls {
   display: none;
   justify-content: center;

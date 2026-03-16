@@ -115,7 +115,10 @@ app.get("/api/movies", async (req, res) => {
         .json({ error: "Failed to fetch from TMDB" });
     }
     const data = await response.json();
-    res.json(data.results ?? []);
+    res.json({
+      results: data.results ?? [],
+      totalPages: data.total_pages ?? 1,
+    });
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
@@ -330,6 +333,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
       additionalProperties: false,
       required: [
         "background",
+        "surface",
         "hover",
         "button",
         "darkOne",
@@ -339,6 +343,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
       ],
       properties: {
         background: { type: "string" },
+        surface: { type: "string" },
         hover: { type: "string" },
         button: { type: "string" },
         darkOne: { type: "string" },
@@ -436,8 +441,8 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
 
   const baseSystemPrompt =
     theme === "dark"
-      ? "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster.  Always choose a dark color for the background. Ensure all other colors provide good, accessible contrast on the dark background from the poster composition."
-      : "You are a color extraction assistant. Return six hex-coded colors (background, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition.";
+      ? "You are a color extraction assistant. Return eight hex-coded colors (background, surface, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. surface is a slightly lighter or darker shade of background, used for card and panel backgrounds. Always choose a dark color for the background. Ensure all other colors provide good, accessible contrast on the dark background from the poster composition."
+      : "You are a color extraction assistant. Return eight hex-coded colors (background, surface, hover, button, darkOne, darkTwo, lightOne, lightTwo) derived from the uploaded poster. surface is a slightly lighter or darker shade of background, used for card and panel backgrounds. Always choose a light color for the background. Ensure all other colors provide good, accessible contrast on the light background from the poster composition.";
 
   let bestChoices = null;
   let bestFailureCount = Infinity;
