@@ -110,9 +110,7 @@ app.get("/api/movies", async (req, res) => {
     const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}${genreParam}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
     const response = await fetchWithTimeout(url, TMDB_OPTIONS, 15_000);
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: "Failed to fetch from TMDB" });
+      return res.status(502).json({ error: "Failed to fetch from TMDB" });
     }
     const data = await response.json();
     res.json({
@@ -138,9 +136,7 @@ app.get("/api/searchmovies", async (req, res) => {
   try {
     const response = await fetchWithTimeout(url, TMDB_OPTIONS, 15_000);
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: "Failed to fetch from TMDB" });
+      return res.status(502).json({ error: "Failed to fetch from TMDB" });
     }
     const data = await response.json();
     res.json(data.results ?? []);
@@ -160,27 +156,28 @@ app.get("/proxy-image", async (req, res) => {
   try {
     parsedUrl = new URL(imageUrl);
   } catch {
-    return res.status(400).send("Invalid image URL");
+    return res.status(400).json({ error: "Invalid image URL" });
   }
   if (
     parsedUrl.protocol !== "https:" ||
     parsedUrl.hostname !== "media.themoviedb.org"
   ) {
-    return res.status(400).send("Invalid image URL");
+    return res.status(400).json({ error: "Invalid image URL" });
   }
   try {
     const response = await fetchWithTimeout(imageUrl, {}, 20_000);
     res.set("Content-Type", response.headers.get("content-type"));
     response.body.on("error", (err) => {
       console.error("Error piping image stream:", err);
-      if (!res.headersSent) res.status(500).send("Failed to stream image");
+      if (!res.headersSent)
+        res.status(500).json({ error: "Failed to stream image" });
     });
     response.body.pipe(res);
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
     console.error("Error fetching image:", err);
-    res.status(500).send("Failed to fetch image");
+    res.status(500).json({ error: "Failed to fetch image" });
   }
 });
 
@@ -480,14 +477,6 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
       }
 
       const failureCount = failures.length;
-      console.log(
-        `[contrast audit] attempt ${attempt}: ${failureCount} failing pair(s)`,
-      );
-      failures.forEach((f) => {
-        console.log(
-          `  - ${f.label}: ${f.fgKey} (${f.fgHex}) on ${f.bgKey} (${f.bgHex}) — ${f.ratio}:1 needs ${f.isUI ? "≥3:1" : "≥4.5:1"}`,
-        );
-      });
 
       if (failureCount < bestFailureCount) {
         bestChoices = choices;
@@ -520,9 +509,6 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
     }
 
     // All attempts exhausted — return best palette found
-    console.log(
-      `[contrast audit] returning best palette after 3 attempts (${bestFailureCount} failure(s))`,
-    );
     return res.json({ cached: false, choices: bestChoices });
   } catch (err) {
     console.error("Error extracting colors:", err);

@@ -250,6 +250,13 @@ test("POST /api/palettes rejects palette missing required key", async ({
   expect(res.status()).toBe(400);
 });
 
+test("proxy-image error response is JSON", async ({ request }) => {
+  const res = await request.get("/proxy-image?url=https://evil.com/img.png");
+  expect(res.status()).toBe(400);
+  const body = await res.json();
+  expect(body).toHaveProperty("error");
+});
+
 test("POST /api/palettes rejects movieTitle longer than 500 chars", async ({
   request,
 }) => {
