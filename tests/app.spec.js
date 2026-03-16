@@ -26,6 +26,7 @@ const mockPalette = {
       message: {
         content: JSON.stringify({
           background: "#111",
+          surface: "#1a1a1a",
           hover: "#222",
           button: "#333",
           darkOne: "#444",
@@ -394,6 +395,23 @@ test("next page button disabled when on last page", async ({ page }) => {
   await expect(page.locator("#nextPage")).toBeDisabled();
 });
 
+test("next page button disabled after navigating to last page", async ({
+  page,
+}) => {
+  await page.route("/api/movies*", (route) =>
+    route.fulfill({ json: { results: mockMovies, totalPages: 2 } }),
+  );
+  await page.selectOption("#genre", "28");
+  await expect(page.locator("#nextPage")).not.toBeDisabled();
+  await page.locator("#nextPage").click();
+  await expect(page.locator("#nextPage")).toBeDisabled();
+});
+
+test("prev page button disabled on page 1", async ({ page }) => {
+  await page.selectOption("#genre", "28");
+  await expect(page.locator("#prevPage")).toBeDisabled();
+});
+
 test("palette extraction renders color swatches", async ({ page }) => {
   await page.selectOption("#genre", "28");
   await page.locator(".movieCard").first().click();
@@ -402,7 +420,7 @@ test("palette extraction renders color swatches", async ({ page }) => {
     page.locator("#extractDarkColor").click(),
   ]);
   const count = await page.locator(".palette-swatch").count();
-  expect(count).toBeGreaterThan(0);
+  expect(count).toBe(8);
 });
 
 test("broken thumbnail image falls back to SVG placeholder", async ({

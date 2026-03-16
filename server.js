@@ -199,6 +199,9 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
   }
   try {
     const response = await fetchWithTimeout(imageUrl, {}, 20_000);
+    if (!response.ok) {
+      return res.status(502).json({ error: "Failed to fetch image" });
+    }
     const contentLength = parseInt(
       response.headers.get("content-length") || "0",
       10,
@@ -207,6 +210,15 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
       return res.status(413).json({ error: "Image too large" });
     }
     res.set("Content-Type", response.headers.get("content-type"));
+    let bytesReceived = 0;
+    response.body.on("data", (chunk) => {
+      bytesReceived += chunk.length;
+      if (bytesReceived > 10_000_000) {
+        response.body.destroy();
+        if (!res.headersSent)
+          res.status(413).json({ error: "Image too large" });
+      }
+    });
     response.body.on("error", (err) => {
       console.error("Error piping image stream:", err);
       if (!res.headersSent)
@@ -309,7 +321,7 @@ async function auditPalette(palette, theme) {
           },
           {
             label: "movie card text",
-            bgKey: "darkTwo",
+            bgKey: "lightTwo",
             fgKey: "darkOne",
             isUI: false,
           },
@@ -546,7 +558,7 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
         const failingList = failures
           .map(
             (f) =>
-              `- ${f.bgKey} (${f.bgHex}) on ${f.fgKey} (${f.fgHex}): ${f.ratio}:1 — needs ${f.isUI ? "≥3:1 [UI component]" : `≥4.5:1 [${f.label}]`}`,
+              `- ${f.fgKey} (${f.fgHex}) on ${f.bgKey} (${f.bgHex}): ${f.ratio}:1 — needs ${f.isUI ? "≥3:1 [UI component]" : `≥4.5:1 [${f.label}]`}`,
           )
           .join("\n");
 
@@ -615,7 +627,7 @@ app.post("/api/palettes", apiLimiter, async (req, res) => {
     PALETTE_KEYS.map((k) => [k, palette[k]]),
   );
   const numericMovieId = Number(movieId);
-  if (!movieId || Number.isNaN(numericMovieId)) {
+  if (Number.isNaN(numericMovieId)) {
     return res.status(400).json({ error: "Invalid request" });
   }
   if (!db) return res.status(503).json({ error: "Database not ready" });
