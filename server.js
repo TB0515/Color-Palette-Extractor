@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import path from "path";
@@ -39,7 +41,26 @@ const PORT = process.env.PORT || 8000;
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
-app.use(cors());
+
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || "http://localhost:8000"
+).split(",");
+app.use(
+  cors({
+    origin: (origin, cb) =>
+      !origin || ALLOWED_ORIGINS.includes(origin)
+        ? cb(null, true)
+        : cb(new Error("Not allowed")),
+  }),
+);
+app.use(helmet());
+
+const extractColorsLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -367,7 +388,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
 }
 
 // OpenAI color extraction proxy
-app.post("/api/extract-colors", async (req, res) => {
+app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
   const { imageBase64, theme, movieId } = req.body;
   if (!imageBase64 || !["dark", "light"].includes(theme)) {
     return res.status(400).json({ error: "Invalid request" });
