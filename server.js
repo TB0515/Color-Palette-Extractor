@@ -62,6 +62,14 @@ const extractColorsLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 15_000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+    clearTimeout(id),
+  );
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -100,7 +108,7 @@ app.get("/api/movies", async (req, res) => {
 
     const genreParam = genreID ? `&with_genres=${genreID}` : "";
     const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&language=en-US&page=${pageNumber}${genreParam}&primary_release_date.gte=${startDate}&primary_release_date.lte=${endDate}`;
-    const response = await fetch(url, TMDB_OPTIONS);
+    const response = await fetchWithTimeout(url, TMDB_OPTIONS, 15_000);
     if (!response.ok) {
       return res
         .status(response.status)
@@ -109,6 +117,8 @@ app.get("/api/movies", async (req, res) => {
     const data = await response.json();
     res.json(data.results ?? []);
   } catch (err) {
+    if (err.name === "AbortError")
+      return res.status(504).json({ error: "Request timed out" });
     console.error("Error fetching movies:", err);
     res.status(500).json({ error: "Failed to fetch movies" });
   }
@@ -123,7 +133,7 @@ app.get("/api/searchmovies", async (req, res) => {
 
   const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
   try {
-    const response = await fetch(url, TMDB_OPTIONS);
+    const response = await fetchWithTimeout(url, TMDB_OPTIONS, 15_000);
     if (!response.ok) {
       return res
         .status(response.status)
@@ -132,6 +142,8 @@ app.get("/api/searchmovies", async (req, res) => {
     const data = await response.json();
     res.json(data.results ?? []);
   } catch (err) {
+    if (err.name === "AbortError")
+      return res.status(504).json({ error: "Request timed out" });
     console.error("Error searching movies:", err);
     res.status(500).json({ error: "Failed to search movies" });
   }
@@ -154,7 +166,7 @@ app.get("/proxy-image", async (req, res) => {
     return res.status(400).send("Invalid image URL");
   }
   try {
-    const response = await fetch(imageUrl);
+    const response = await fetchWithTimeout(imageUrl, {}, 20_000);
     res.set("Content-Type", response.headers.get("content-type"));
     response.body.on("error", (err) => {
       console.error("Error piping image stream:", err);
@@ -162,6 +174,8 @@ app.get("/proxy-image", async (req, res) => {
     });
     response.body.pipe(res);
   } catch (err) {
+    if (err.name === "AbortError")
+      return res.status(504).json({ error: "Request timed out" });
     console.error("Error fetching image:", err);
     res.status(500).send("Failed to fetch image");
   }
@@ -172,8 +186,10 @@ async function checkContrastPair(fg, bg) {
   const fcolor = fg.replace("#", "");
   const bcolor = bg.replace("#", "");
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://webaim.org/resources/contrastchecker/?fcolor=${fcolor}&bcolor=${bcolor}&api`,
+      {},
+      10_000,
     );
     if (!response.ok) return null;
     return await response.json();
@@ -361,14 +377,18 @@ async function callOpenAI(systemPrompt, imageBase64) {
   };
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       },
-      body: JSON.stringify(requestBody),
-    });
+      90_000,
+    );
 
     if (!response.ok) {
       console.error(
@@ -382,6 +402,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
     const data = await response.json();
     return data.choices;
   } catch (err) {
+    if (err.name === "AbortError") return null;
     console.error("OpenAI fetch error:", err);
     return null;
   }
