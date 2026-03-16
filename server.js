@@ -40,7 +40,7 @@ async function connectDB() {
 const PORT = process.env.PORT || 8000;
 
 const app = express();
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "11mb" }));
 
 const ALLOWED_ORIGINS = (
   process.env.ALLOWED_ORIGINS || "http://localhost:8000"
@@ -512,6 +512,7 @@ app.get("/api/palettes", async (_req, res) => {
       .collection("palettes")
       .find()
       .sort({ savedAt: -1 })
+      .limit(200)
       .toArray();
     res.json(palettes);
   } catch (err) {
@@ -519,6 +520,18 @@ app.get("/api/palettes", async (_req, res) => {
     res.status(500).json({ error: "Failed to fetch palettes" });
   }
 });
+
+const PALETTE_KEYS = [
+  "background",
+  "surface",
+  "hover",
+  "button",
+  "darkOne",
+  "darkTwo",
+  "lightOne",
+  "lightTwo",
+];
+const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
 
 app.post("/api/palettes", async (req, res) => {
   const { movieId, movieTitle, theme, palette } = req.body;
@@ -531,13 +544,24 @@ app.post("/api/palettes", async (req, res) => {
   ) {
     return res.status(400).json({ error: "Invalid request" });
   }
+  const titleStr = String(movieTitle);
+  if (titleStr.length > 500)
+    return res.status(400).json({ error: "Invalid movieTitle" });
+  if (
+    PALETTE_KEYS.some((k) => !palette[k] || !HEX_RE.test(String(palette[k])))
+  ) {
+    return res.status(400).json({ error: "Invalid palette" });
+  }
+  const cleanPalette = Object.fromEntries(
+    PALETTE_KEYS.map((k) => [k, palette[k]]),
+  );
   if (!db) return res.status(503).json({ error: "Database not ready" });
   try {
     const doc = {
       movieId: Number(movieId),
-      movieTitle: String(movieTitle),
+      movieTitle: titleStr,
       theme,
-      palette,
+      palette: cleanPalette,
       savedAt: new Date(),
     };
     await db

@@ -184,6 +184,7 @@ test("POST /api/palettes saves then DELETE removes palette", async ({
 }) => {
   const palette = {
     background: "#111",
+    surface: "#1a1a1a",
     hover: "#222",
     button: "#333",
     darkOne: "#444",
@@ -208,4 +209,60 @@ test("extract-colors rejects oversized payload", async ({ request }) => {
     data: { imageBase64: "a".repeat(10_900_001), theme: "dark" },
   });
   expect(res.status()).toBe(413);
+});
+
+test("POST /api/palettes rejects invalid hex color in palette", async ({
+  request,
+}) => {
+  const palette = {
+    background: "notahex",
+    surface: "#1a1a1a",
+    hover: "#222",
+    button: "#333",
+    darkOne: "#444",
+    darkTwo: "#555",
+    lightOne: "#eee",
+    lightTwo: "#fff",
+  };
+  const res = await request.post("/api/palettes", {
+    data: { movieId: 1, movieTitle: "Test", theme: "dark", palette },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("POST /api/palettes rejects palette missing required key", async ({
+  request,
+}) => {
+  const palette = {
+    surface: "#1a1a1a",
+    hover: "#222",
+    button: "#333",
+    darkOne: "#444",
+    darkTwo: "#555",
+    lightOne: "#eee",
+    lightTwo: "#fff",
+  }; // missing background
+  const res = await request.post("/api/palettes", {
+    data: { movieId: 1, movieTitle: "Test", theme: "dark", palette },
+  });
+  expect(res.status()).toBe(400);
+});
+
+test("POST /api/palettes rejects movieTitle longer than 500 chars", async ({
+  request,
+}) => {
+  const palette = {
+    background: "#111",
+    surface: "#1a1a1a",
+    hover: "#222",
+    button: "#333",
+    darkOne: "#444",
+    darkTwo: "#555",
+    lightOne: "#eee",
+    lightTwo: "#fff",
+  };
+  const res = await request.post("/api/palettes", {
+    data: { movieId: 1, movieTitle: "a".repeat(501), theme: "dark", palette },
+  });
+  expect(res.status()).toBe(400);
 });
