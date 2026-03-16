@@ -414,3 +414,60 @@ test("broken thumbnail image falls back to SVG placeholder", async ({
   const src = await firstImg.getAttribute("src");
   expect(src).toContain("data:image/svg+xml");
 });
+
+test("removing active palette from sidebar hides remove-btn and shows save-btn", async ({
+  page,
+}) => {
+  const paletteId = "000000000000000000000001";
+  const cachedPalette = {
+    cached: true,
+    palette: {
+      background: "#111",
+      surface: "#1a1a1a",
+      hover: "#222",
+      button: "#333",
+      darkOne: "#444",
+      darkTwo: "#555",
+      lightOne: "#eee",
+      lightTwo: "#ddd",
+    },
+    id: paletteId,
+  };
+  await page.route("/api/extract-colors", (route) =>
+    route.fulfill({ json: cachedPalette }),
+  );
+  await page.route("/api/palettes", (route) =>
+    route.fulfill({
+      json: [
+        {
+          _id: paletteId,
+          movieTitle: "Test Movie 1",
+          theme: "dark",
+          palette: cachedPalette.palette,
+          savedAt: new Date().toISOString(),
+        },
+      ],
+    }),
+  );
+  await page.route(`/api/palettes/${paletteId}`, (route) =>
+    route.fulfill({ status: 204, body: "" }),
+  );
+
+  // Extract cached palette so remove button is visible
+  await page.selectOption("#genre", "28");
+  await page.locator(".movieCard").first().click();
+  await Promise.all([
+    page.waitForResponse("/api/extract-colors"),
+    page.locator("#extractDarkColor").click(),
+  ]);
+  await expect(page.locator("#removeSavedBtn")).toBeVisible();
+
+  // Open sidebar and delete the active palette
+  await page.locator("#sidebarToggle").click();
+  await expect(page.locator("#savedSidebar")).toBeVisible();
+  await page.locator(".sidebar-delete-btn").first().click();
+
+  // Save button should reappear, remove button should hide
+  await expect(page.locator("#savePaletteBtn")).toBeVisible();
+  await expect(page.locator("#removeSavedBtn")).toBeHidden();
+});
