@@ -209,14 +209,20 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
     if (contentLength > 10_000_000) {
       return res.status(413).json({ error: "Image too large" });
     }
-    res.set("Content-Type", response.headers.get("content-type"));
+    const upstreamContentType = response.headers.get("content-type") || "";
+    if (!upstreamContentType.startsWith("image/")) {
+      return res
+        .status(502)
+        .json({ error: "Upstream returned non-image content type" });
+    }
+    const chunks = [];
     let bytesReceived = 0;
     response.body.on("data", (chunk) => {
       bytesReceived += chunk.length;
       if (bytesReceived > 10_000_000) {
         response.body.destroy();
-        if (!res.headersSent)
-          res.status(413).json({ error: "Image too large" });
+      } else {
+        chunks.push(chunk);
       }
     });
     response.body.on("error", (err) => {
@@ -224,7 +230,13 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
       if (!res.headersSent)
         res.status(500).json({ error: "Failed to stream image" });
     });
-    response.body.pipe(res);
+    response.body.on("end", () => {
+      if (bytesReceived > 10_000_000) {
+        return res.status(413).json({ error: "Image too large" });
+      }
+      res.set("Content-Type", upstreamContentType);
+      res.send(Buffer.concat(chunks));
+    });
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
