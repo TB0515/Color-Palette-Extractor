@@ -158,7 +158,7 @@ app.get("/api/movies", apiLimiter, async (req, res) => {
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
-    console.error("Error fetching movies:", err);
+    console.error("Error fetching movies:", err.message);
     res.status(500).json({ error: "Failed to fetch movies" });
   }
 });
@@ -181,7 +181,7 @@ app.get("/api/searchmovies", apiLimiter, async (req, res) => {
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
-    console.error("Error searching movies:", err);
+    console.error("Error searching movies:", err.message);
     res.status(500).json({ error: "Failed to search movies" });
   }
 });
@@ -231,7 +231,7 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
       }
     });
     response.body.on("error", (err) => {
-      console.error("Error piping image stream:", err);
+      console.error("Error piping image stream:", err.message);
       if (!res.headersSent)
         res.status(500).json({ error: "Failed to stream image" });
     });
@@ -245,7 +245,7 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
   } catch (err) {
     if (err.name === "AbortError")
       return res.status(504).json({ error: "Request timed out" });
-    console.error("Error fetching image:", err);
+    console.error("Error fetching image:", err.message);
     res.status(500).json({ error: "Failed to fetch image" });
   }
 });
@@ -462,11 +462,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
     );
 
     if (!response.ok) {
-      console.error(
-        "OpenAI API error:",
-        response.status,
-        await response.text(),
-      );
+      console.error("OpenAI API error: status", response.status);
       return null;
     }
 
@@ -474,7 +470,7 @@ async function callOpenAI(systemPrompt, imageBase64) {
     return data.choices;
   } catch (err) {
     if (err.name === "AbortError") return null;
-    console.error("OpenAI fetch error:", err);
+    console.error("OpenAI fetch error:", err.message);
     return null;
   }
 }
@@ -548,7 +544,7 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
 
       // Network error during audit — skip retries, return current palette
       if (failures === null) {
-        return res.json({ cached: false, choices });
+        return res.json({ cached: false, choices, contrastAuditSkipped: true });
       }
 
       const failureCount = failures.length;
@@ -586,7 +582,7 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
     // All attempts exhausted — return best palette found
     return res.json({ cached: false, choices: bestChoices });
   } catch (err) {
-    console.error("Error extracting colors:", err);
+    console.error("Error extracting colors:", err.message);
     res.status(500).json({ error: "Failed to extract colors" });
   }
 });
@@ -603,7 +599,7 @@ app.get("/api/palettes", apiLimiter, async (_req, res) => {
       .toArray();
     res.json(palettes);
   } catch (err) {
-    console.error("Error fetching palettes:", err);
+    console.error("Error fetching palettes:", err.message);
     res.status(500).json({ error: "Failed to fetch palettes" });
   }
 });
@@ -664,7 +660,7 @@ app.post("/api/palettes", apiLimiter, async (req, res) => {
       .findOne({ movieId: doc.movieId, theme });
     res.status(201).json(saved);
   } catch (err) {
-    console.error("Error saving palette:", err);
+    console.error("Error saving palette:", err.message);
     res.status(500).json({ error: "Failed to save palette" });
   }
 });
@@ -684,7 +680,7 @@ app.delete("/api/palettes/:id", apiLimiter, async (req, res) => {
     }
     res.status(204).end();
   } catch (err) {
-    console.error("Error deleting palette:", err);
+    console.error("Error deleting palette:", err.message);
     res.status(500).json({ error: "Failed to delete palette" });
   }
 });
@@ -706,7 +702,7 @@ app.get("/", (req, res) => {
   try {
     await connectDB();
   } catch (err) {
-    console.error("Failed to connect to MongoDB:", err);
+    console.error("Failed to connect to MongoDB:", err.message);
     process.exit(1);
   }
 
