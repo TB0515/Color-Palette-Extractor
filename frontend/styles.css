@@ -775,16 +775,6 @@ body.light-theme #savePaletteBtn {
   opacity: 0.85;
 }
 
-#cachedBadge {
-  font-size: 0.85rem;
-  color: var(--lightTwo);
-  font-style: italic;
-}
-
-body.light-theme #cachedBadge {
-  color: var(--darkTwo);
-}
-
 body:has(#savedSidebar:not([hidden])) {
   padding-right: 320px;
 }
