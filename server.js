@@ -118,7 +118,7 @@ const TMDB_OPTIONS = {
 // TMDB movies proxy route
 app.get("/api/movies", apiLimiter, async (req, res) => {
   const { genreID, startYear, endYear, page } = req.query;
-  const pageNumber = Math.max(parseInt(page) || 1, 1);
+  const pageNumber = Math.min(Math.max(parseInt(page) || 1, 1), 500);
 
   const start = parseInt(startYear, 10);
   const end = parseInt(endYear, 10);
@@ -130,6 +130,11 @@ app.get("/api/movies", apiLimiter, async (req, res) => {
     start > end
   ) {
     return res.status(400).json({ error: "Invalid year range" });
+  }
+  if (genreID === undefined || genreID === null) {
+    return res
+      .status(400)
+      .json({ error: "Missing required parameter: genreID" });
   }
   if (genreID !== "" && !/^\d+$/.test(genreID)) {
     return res.status(400).json({ error: "Invalid genreID" });
