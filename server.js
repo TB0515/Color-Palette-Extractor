@@ -684,24 +684,42 @@ app.delete("/api/palettes/:id", apiLimiter, async (req, res) => {
   }
 });
 
+app.get("/healthz", (_req, res) => {
+  if (!db) {
+    return res
+      .status(503)
+      .json({ status: "unavailable", reason: "database not connected" });
+  }
+  res.json({ status: "ok" });
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "./frontend/index.html"));
 });
 
-connectDB().catch((err) => {
-  console.error("Failed to connect to MongoDB:", err);
-});
+(async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err);
+    process.exit(1);
+  }
 
-const server = app.listen(PORT, () => {
-  console.log(`Image proxy server running at http://localhost:${PORT}`);
-});
-
-async function shutdown() {
-  server.close(async () => {
-    await mongoClient.close();
-    process.exit(0);
+  const server = app.listen(PORT, () => {
+    console.log(`Image proxy server running at http://localhost:${PORT}`);
   });
-  setTimeout(() => process.exit(1), 10_000);
-}
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+
+  async function shutdown() {
+    server.close(async () => {
+      try {
+        await mongoClient.close();
+      } catch (e) {
+        console.error("MongoDB close error:", e.message);
+      }
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000);
+  }
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+})();
