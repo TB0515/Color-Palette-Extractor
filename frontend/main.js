@@ -78,14 +78,13 @@ window.addEventListener("load", function () {
   }
 
   function populateMovies(movies) {
+    const posterPlaceholder = document.getElementById("posterPlaceholder");
     movieContainer.replaceChildren();
     const fragment = document.createDocumentFragment();
     movies.forEach((movie) => {
       const card = document.createElement("button");
       card.classList.add("movieCard");
       card.setAttribute("aria-label", "Select " + movie.title);
-
-      const posterPlaceholder = document.getElementById("posterPlaceholder");
 
       card.addEventListener("click", () => {
         if (movie.poster_path) {
@@ -125,7 +124,7 @@ window.addEventListener("load", function () {
       let movieImgEl;
       if (movie.poster_path) {
         movieImgEl = document.createElement("img");
-        movieImgEl.src = `https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`;
+        movieImgEl.src = `/proxy-image?url=${encodeURIComponent(`https://media.themoviedb.org/t/p/w220_and_h330_face${movie.poster_path}`)}`;
         movieImgEl.alt = movie.title;
         movieImgEl.onerror = () => {
           movieImgEl.src = PLACEHOLDER_SVG;
@@ -133,7 +132,7 @@ window.addEventListener("load", function () {
         };
       } else if (movie.backdrop_path) {
         movieImgEl = document.createElement("img");
-        movieImgEl.src = `https://media.themoviedb.org/t/p/w300${movie.backdrop_path}`;
+        movieImgEl.src = `/proxy-image?url=${encodeURIComponent(`https://media.themoviedb.org/t/p/w300${movie.backdrop_path}`)}`;
         movieImgEl.alt = movie.title;
         movieImgEl.onerror = () => {
           movieImgEl.src = PLACEHOLDER_SVG;
@@ -321,6 +320,13 @@ window.addEventListener("load", function () {
           palette = JSON.parse(data.choices[0].message.content);
         } catch {
           throw new Error("Received invalid color data from API");
+        }
+        const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+        const allValid = Object.values(palette).every((v) =>
+          hexPattern.test(v),
+        );
+        if (!allValid) {
+          throw new Error("Received palette contains invalid hex color values");
         }
         lastSavedId = null;
         saveBtn.hidden = false;
