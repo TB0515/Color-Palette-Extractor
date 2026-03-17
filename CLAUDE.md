@@ -25,5 +25,3 @@ The following commands may be run without prompting for permission. Run each com
 - `npm test`, `npm run lint`, `npm start`, `npm install`
 - `gh pr create`, `gh pr merge`, `gh pr view`, `gh branch delete`
 - Read/Write/Edit on any file in this project directory
-
-

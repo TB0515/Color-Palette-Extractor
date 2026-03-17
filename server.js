@@ -54,7 +54,7 @@ const ALLOWED_ORIGINS = (
 app.use(
   cors({
     origin: (origin, cb) =>
-      !origin || ALLOWED_ORIGINS.includes(origin)
+      ALLOWED_ORIGINS.includes(origin)
         ? cb(null, true)
         : cb(new Error("Not allowed")),
   }),
