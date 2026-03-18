@@ -40,6 +40,7 @@ async function connectDB() {
   await db
     .collection("palettes")
     .createIndex({ movieId: 1, theme: 1 }, { unique: true });
+  await db.collection("palettes").createIndex({ savedAt: -1 });
   console.log("Connected to MongoDB");
 }
 
@@ -666,12 +667,12 @@ app.post("/api/palettes", apiLimiter, async (req, res) => {
       palette: cleanPalette,
       savedAt: new Date(),
     };
-    await db
-      .collection("palettes")
-      .replaceOne({ movieId: doc.movieId, theme }, doc, { upsert: true });
     const saved = await db
       .collection("palettes")
-      .findOne({ movieId: doc.movieId, theme });
+      .findOneAndReplace({ movieId: doc.movieId, theme }, doc, {
+        upsert: true,
+        returnDocument: "after",
+      });
     res.status(201).json(saved);
   } catch (err) {
     console.error("Error saving palette:", err.message);
@@ -725,7 +726,9 @@ app.get("/", (req, res) => {
   });
 
   async function shutdown() {
+    const forceExit = setTimeout(() => process.exit(1), 10_000);
     server.close(async () => {
+      clearTimeout(forceExit);
       try {
         await mongoClient.close();
       } catch (e) {
@@ -733,7 +736,6 @@ app.get("/", (req, res) => {
       }
       process.exit(0);
     });
-    setTimeout(() => process.exit(1), 10_000);
   }
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
