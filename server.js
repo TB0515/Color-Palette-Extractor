@@ -253,8 +253,8 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
 
 // WebAIM contrast checker — returns result object or null on network error
 async function checkContrastPair(fg, bg) {
-  const fcolor = fg.replace("#", "");
-  const bcolor = bg.replace("#", "");
+  const fcolor = encodeURIComponent(fg.replace("#", ""));
+  const bcolor = encodeURIComponent(bg.replace("#", ""));
   try {
     const response = await fetchWithTimeout(
       `https://webaim.org/resources/contrastchecker/?fcolor=${fcolor}&bcolor=${bcolor}&api`,
@@ -496,15 +496,20 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
     !Number.isNaN(numericMovieId) &&
     ["dark", "light"].includes(theme)
   ) {
-    const cached = await db
-      .collection("palettes")
-      .findOne({ movieId: numericMovieId, theme });
-    if (cached) {
-      return res.json({
-        cached: true,
-        palette: cached.palette,
-        id: cached._id,
-      });
+    try {
+      const cached = await db
+        .collection("palettes")
+        .findOne({ movieId: numericMovieId, theme });
+      if (cached) {
+        return res.json({
+          cached: true,
+          palette: cached.palette,
+          id: cached._id,
+        });
+      }
+    } catch (err) {
+      console.error("Error reading palette cache:", err.message);
+      return res.status(500).json({ error: "Failed to read palette cache" });
     }
   }
 
@@ -581,6 +586,14 @@ app.post("/api/extract-colors", extractColorsLimiter, async (req, res) => {
     }
 
     // All attempts exhausted — return best palette found
+    // defense-in-depth: structurally unreachable under current code,
+    // but guards against a silent 200-with-null regression if future
+    // changes remove the attempt-1 early returns
+    if (!bestChoices) {
+      return res
+        .status(502)
+        .json({ error: "Color extraction service unavailable" });
+    }
     return res.json({ cached: false, choices: bestChoices });
   } catch (err) {
     console.error("Error extracting colors:", err.message);
