@@ -207,12 +207,12 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
     if (!response.ok) {
       return res.status(502).json({ error: "Failed to fetch image" });
     }
-    const contentLength = parseInt(
-      response.headers.get("content-length") || "0",
-      10,
-    );
-    if (contentLength > 10_000_000) {
-      return res.status(413).json({ error: "Image too large" });
+    const rawContentLength = response.headers.get("content-length");
+    if (rawContentLength !== null) {
+      const contentLength = parseInt(rawContentLength, 10);
+      if (contentLength > 10_000_000) {
+        return res.status(413).json({ error: "Image too large" });
+      }
     }
     const upstreamContentType = response.headers.get("content-type") || "";
     if (!upstreamContentType.startsWith("image/")) {
@@ -236,6 +236,7 @@ app.get("/proxy-image", proxyImageLimiter, async (req, res) => {
         res.status(500).json({ error: "Failed to stream image" });
     });
     response.body.on("end", () => {
+      if (res.headersSent) return;
       if (bytesReceived > 10_000_000) {
         return res.status(413).json({ error: "Image too large" });
       }
