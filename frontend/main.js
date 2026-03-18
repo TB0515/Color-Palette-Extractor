@@ -50,7 +50,10 @@ window.addEventListener("load", function () {
 
   // Get Movie list
   async function fetchMovies(genreID, startYear, endYear, page) {
-    movieContainer.innerHTML = '<p class="loading-msg">Loading...</p>';
+    const loadingMsg = document.createElement("p");
+    loadingMsg.className = "loading-msg";
+    loadingMsg.textContent = "Loading...";
+    movieContainer.replaceChildren(loadingMsg);
     try {
       const url = `/api/movies?genreID=${genreID}&startYear=${startYear}&endYear=${endYear}&page=${page}`;
       const response = await fetch(url);
@@ -71,8 +74,10 @@ window.addEventListener("load", function () {
       return true;
     } catch (err) {
       console.error("Error fetching movies:", err);
-      movieContainer.innerHTML =
-        '<p class="fetch-error">Failed to load movies. Please try again.</p>';
+      const fetchErrorMsg = document.createElement("p");
+      fetchErrorMsg.className = "fetch-error";
+      fetchErrorMsg.textContent = "Failed to load movies. Please try again.";
+      movieContainer.replaceChildren(fetchErrorMsg);
       return false;
     }
   }
@@ -183,8 +188,10 @@ window.addEventListener("load", function () {
       populateMovies(movies);
     } catch (err) {
       console.error("Error searching movies:", err);
-      movieContainer.innerHTML =
-        '<p class="fetch-error">Search failed. Please try again.</p>';
+      const searchErrorMsg = document.createElement("p");
+      searchErrorMsg.className = "fetch-error";
+      searchErrorMsg.textContent = "Search failed. Please try again.";
+      movieContainer.replaceChildren(searchErrorMsg);
     }
   }
 
@@ -321,7 +328,8 @@ window.addEventListener("load", function () {
         } catch {
           throw new Error("Received invalid color data from API");
         }
-        const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+        const hexPattern =
+          /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/;
         const allValid = Object.values(palette).every((v) =>
           hexPattern.test(v),
         );
@@ -439,8 +447,10 @@ window.addEventListener("load", function () {
       renderSidebar(await res.json());
     } catch (err) {
       console.error("Error loading palettes:", err);
-      sidebarList.innerHTML =
-        '<p class="fetch-error">Failed to load saved palettes.</p>';
+      const sidebarErrorMsg = document.createElement("p");
+      sidebarErrorMsg.className = "fetch-error";
+      sidebarErrorMsg.textContent = "Failed to load saved palettes.";
+      sidebarList.replaceChildren(sidebarErrorMsg);
     }
   }
 
