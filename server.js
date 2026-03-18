@@ -53,10 +53,10 @@ const ALLOWED_ORIGINS = (
 ).split(",");
 app.use(
   cors({
-    origin: (origin, cb) =>
-      ALLOWED_ORIGINS.includes(origin)
-        ? cb(null, true)
-        : cb(new Error("Not allowed")),
+    origin: (origin, cb) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      cb(null, false);
+    },
   }),
 );
 app.use(
