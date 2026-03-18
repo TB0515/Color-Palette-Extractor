@@ -25,14 +25,14 @@ const mockPalette = {
     {
       message: {
         content: JSON.stringify({
-          background: "#111",
+          background: "#111111",
           surface: "#1a1a1a",
-          hover: "#222",
-          button: "#333",
-          darkOne: "#444",
-          darkTwo: "#555",
-          lightOne: "#eee",
-          lightTwo: "#ddd",
+          hover: "#222222",
+          button: "#333333",
+          darkOne: "#444444",
+          darkTwo: "#555555",
+          lightOne: "#eeeeee",
+          lightTwo: "#dddddd",
         }),
       },
     },
@@ -171,7 +171,7 @@ test("successful palette extraction applies CSS vars", async ({ page }) => {
       .getPropertyValue("--background")
       .trim(),
   );
-  expect(bg).toBe("#111");
+  expect(bg).toBe("#111111");
 });
 
 test("year error shown when startYear is greater than endYear", async ({
